@@ -51,7 +51,7 @@ fn main() {
                 first_read = false;
                 println!("{nanos:#x}");
                 println!("{:#x}", i64::from(sample) & 0x1111_1111);
-                nanos = unsafe { transmute([(nanos >> 32) as i32, sample])};
+                nanos = unsafe { transmute([sample, (nanos >> 32) as i32])};
                 //nanos += i64::from(sample) & 0x1111_1111;
                 println!("{nanos:#x}");
                 let dt = DateTime::from_timestamp_nanos(nanos);
