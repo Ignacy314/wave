@@ -40,6 +40,8 @@ fn make_wav<P: std::convert::AsRef<Path>>(from: DateTime<Utc>, to: DateTime<Utc>
         }
     }
 
+    eprintln!("{best_pps:?}");
+
     if let Some(Pps { nanos, sample, file }) = best_pps {
         let mut nanos_diff = nanos - from_nanos;
         let mut backward = false;
@@ -138,6 +140,7 @@ fn make_wav<P: std::convert::AsRef<Path>>(from: DateTime<Utc>, to: DateTime<Utc>
     }
 }
 
+#[derive(Debug)]
 struct Pps {
     nanos: i64,
     sample: u32,
