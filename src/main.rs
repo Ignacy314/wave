@@ -28,6 +28,9 @@ fn make_wav<P: std::convert::AsRef<Path>>(from: DateTime<Utc>, to: DateTime<Utc>
 
     for wav in &waves {
         let pps_vec = get_pps(wav);
+        for p in &pps_vec {
+            eprintln!("{p:?}");
+        }
         let best = pps_vec
             .into_iter()
             .min_by_key(|x| (x.nanos - from_nanos).abs());
