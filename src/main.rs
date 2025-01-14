@@ -6,6 +6,7 @@ use std::{backtrace, env};
 
 use chrono::{DateTime, Utc};
 
+#[allow(clippy::too_many_lines)]
 fn make_wav<P: std::convert::AsRef<Path>>(from: DateTime<Utc>, to: DateTime<Utc>, path: P, dir: P) {
     let spec = hound::WavSpec {
         channels: 1,
@@ -21,6 +22,7 @@ fn make_wav<P: std::convert::AsRef<Path>>(from: DateTime<Utc>, to: DateTime<Utc>
     waves.sort_unstable();
 
     let from_nanos = from.timestamp_nanos_opt().unwrap();
+    let to_nanos = to.timestamp_nanos_opt().unwrap();
     let mut best_pps = None;
     let mut best_diff = i64::MAX;
 
@@ -58,8 +60,6 @@ fn make_wav<P: std::convert::AsRef<Path>>(from: DateTime<Utc>, to: DateTime<Utc>
                 start_found = true;
             } else {
                 samples_diff -= sample;
-                //let index = waves.iter().enumerate().find(|(_, x)| **x == file).unwrap().0;
-                //let n = waves.len();
                 for wav in waves.iter().rev().skip_while(|x| **x != file).skip(1) {
                     let mut reader = hound::WavReader::open(wav).unwrap();
                     let wav_dur = reader.duration() / 2;
@@ -97,6 +97,44 @@ fn make_wav<P: std::convert::AsRef<Path>>(from: DateTime<Utc>, to: DateTime<Utc>
         }
 
         assert!(start_found, "Failed to find starting point");
+
+        #[allow(clippy::cast_precision_loss)]
+        #[allow(clippy::cast_possible_truncation)]
+        #[allow(clippy::cast_sign_loss)]
+        let mut samples_left = ((to_nanos - from_nanos) as f64 / 1e9_f64 * 48000.0).round() as u32;
+
+        let mut start = true;
+        let mut skip = 0;
+        let mut end = false;
+        for wav in waves.iter().skip_while(|x| **x != start_file) {
+            let mut reader = hound::WavReader::open(wav).unwrap();
+            if start {
+                reader.seek(start_sample / 2).unwrap();
+                start = false;
+            }
+            for s in reader.samples::<i32>() {
+                let sample = s.unwrap();
+                #[allow(clippy::cast_possible_wrap)]
+                if sample == 0xeeee_eeee_u32 as i32 {
+                    skip = 3;
+                } else if skip > 0 {
+                    skip -= 1;
+                } else {
+                    skip = 1;
+                    writer.write_sample(sample);
+                    samples_left -= 1;
+                    if samples_left == 0 {
+                        end = true;
+                        break;
+                    }
+                }
+            }
+            if end {
+                break;
+            }
+        }
+
+        writer.finalize().unwrap();
     }
 }
 
@@ -138,58 +176,62 @@ fn get_pps(f: &PathBuf) -> Vec<Pps> {
 }
 
 fn main() {
-    //make_wav(DateTime::UNIX_EPOCH, DateTime::UNIX_EPOCH, "a");
     let args: Vec<String> = env::args().collect();
-    let mut reader = hound::WavReader::open(args[1].clone()).unwrap();
-    println!("{:?}", reader.spec());
-    let mut pps = false;
-    let mut first_read = false;
-    //let mut read = 0u8;
-    let mut prev = 0i32;
-    let mut diff = 0u64;
-    reader
-        .seek(85000 / u32::from(reader.spec().channels))
-        .unwrap();
-    for s in reader.samples::<i32>() {
-        let sample = s.unwrap();
-        #[allow(clippy::cast_possible_wrap)]
-        if sample == 0xeeee_eeee_u32 as i32 {
-            pps = true;
-        } else if pps {
-            //if read == 0 {
-            //    prev = sample;
-            //    read = 1;
-            //} else if read == 1 {
-            //    let nanos = unsafe { transmute::<[i32; 2], i64>([sample, prev]) };
-            //    let dt = DateTime::from_timestamp_nanos(nanos);
-            //    println!("{diff}");
-            //    diff = 0;
-            //    println!("{dt}");
-            //    read = 2;
-            //} else if read == 2 {
-            //    prev = sample;
-            //    read = 3;
-            //} else {
-            //    let nanos = unsafe { transmute::<[i32; 2], i64>([sample, prev]) };
-            //    let dt = DateTime::from_timestamp_nanos(nanos);
-            //    println!("{dt}");
-            //    read = 0;
-            //    pps = false;
-            //}
-            if first_read {
-                pps = false;
-                first_read = false;
-                let nanos = unsafe { transmute::<[i32; 2], i64>([sample, prev]) };
-                let dt = DateTime::from_timestamp_nanos(nanos);
-                println!("{diff}");
-                diff = 0;
-                println!("{dt}");
-            } else {
-                first_read = true;
-                prev = sample;
-            }
-        } else {
-            diff += 1;
-        }
-    }
+    let from = DateTime::parse_from_str(&args[1], "%Y-%m-%d %H:%M:%S%.3f").unwrap();
+    let to = DateTime::parse_from_str(&args[2], "%Y-%m-%d %H:%M:%S%.3f").unwrap();
+    let path = &args[3];
+    let dir = &args[4];
+    make_wav(from.into(), to.into(), path, dir);
+    //let mut reader = hound::WavReader::open(args[1].clone()).unwrap();
+    //println!("{:?}", reader.spec());
+    //let mut pps = false;
+    //let mut first_read = false;
+    ////let mut read = 0u8;
+    //let mut prev = 0i32;
+    //let mut diff = 0u64;
+    //reader
+    //    .seek(85000 / u32::from(reader.spec().channels))
+    //    .unwrap();
+    //for s in reader.samples::<i32>() {
+    //    let sample = s.unwrap();
+    //    #[allow(clippy::cast_possible_wrap)]
+    //    if sample == 0xeeee_eeee_u32 as i32 {
+    //        pps = true;
+    //    } else if pps {
+    //        //if read == 0 {
+    //        //    prev = sample;
+    //        //    read = 1;
+    //        //} else if read == 1 {
+    //        //    let nanos = unsafe { transmute::<[i32; 2], i64>([sample, prev]) };
+    //        //    let dt = DateTime::from_timestamp_nanos(nanos);
+    //        //    println!("{diff}");
+    //        //    diff = 0;
+    //        //    println!("{dt}");
+    //        //    read = 2;
+    //        //} else if read == 2 {
+    //        //    prev = sample;
+    //        //    read = 3;
+    //        //} else {
+    //        //    let nanos = unsafe { transmute::<[i32; 2], i64>([sample, prev]) };
+    //        //    let dt = DateTime::from_timestamp_nanos(nanos);
+    //        //    println!("{dt}");
+    //        //    read = 0;
+    //        //    pps = false;
+    //        //}
+    //        if first_read {
+    //            pps = false;
+    //            first_read = false;
+    //            let nanos = unsafe { transmute::<[i32; 2], i64>([sample, prev]) };
+    //            let dt = DateTime::from_timestamp_nanos(nanos);
+    //            println!("{diff}");
+    //            diff = 0;
+    //            println!("{dt}");
+    //        } else {
+    //            first_read = true;
+    //            prev = sample;
+    //        }
+    //    } else {
+    //        diff += 1;
+    //    }
+    //}
 }
