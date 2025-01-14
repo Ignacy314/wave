@@ -29,7 +29,7 @@ fn main() {
     //let mut read = 0u8;
     let mut prev = 0i32;
     let mut diff = 0u64;
-    reader.seek(10000).unwrap();
+    reader.seek(10000 / u32::from(reader.spec().channels)).unwrap();
     for s in reader.samples::<i32>() {
         let sample = s.unwrap();
         #[allow(clippy::cast_possible_wrap)]
