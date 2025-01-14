@@ -20,6 +20,7 @@ fn make_wav<P: std::convert::AsRef<Path>>(from: DateTime<Utc>, to: DateTime<Utc>
         .flat_map(|f| f.map(|e| e.path()))
         .collect::<Vec<_>>();
     waves.sort_unstable();
+    eprintln!("{waves:?}");
 
     let from_nanos = from.timestamp_nanos_opt().unwrap();
     let to_nanos = to.timestamp_nanos_opt().unwrap();
