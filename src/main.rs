@@ -130,11 +130,11 @@ fn make_wav<P: std::convert::AsRef<Path>>(
                 let sample = s.unwrap();
                 #[allow(clippy::cast_possible_wrap)]
                 if sample == 0xeeee_eeee_u32 as i32 {
-                    skip = 3;
+                    skip += 3;
                 } else if skip > 0 {
                     skip -= 1;
                 } else {
-                    skip = 1;
+                    skip += 1;
                     writer.write_sample(sample);
                     samples_left -= 1;
                     if samples_left == 0 {
@@ -191,7 +191,7 @@ fn get_pps(f: &PathBuf) -> Vec<Pps> {
 }
 
 fn main() {
-    println!("{}", chrono::Utc::now().timestamp_nanos_opt().unwrap());
+    //println!("{}", chrono::Utc::now().timestamp_nanos_opt().unwrap());
     let args: Vec<String> = env::args().collect();
     let from = DateTime::parse_from_str(&args[1], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
     let to = DateTime::parse_from_str(&args[2], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
