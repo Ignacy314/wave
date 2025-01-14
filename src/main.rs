@@ -44,6 +44,7 @@ fn main() {
         if sample == 0xeeee_eeee_u32 as i32 {
             pps = true;
         } else if pps {
+            println!("{sample:#x}");
             if first_read {
                 pps = false;
                 first_read = false;
