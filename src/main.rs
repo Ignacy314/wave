@@ -49,7 +49,7 @@ fn main() {
                 pps = false;
                 first_read = false;
                 println!("{nanos:#x}");
-                println!("{:#x}", i64::from(sample));
+                println!("{:#x}", i64::from(sample) & 0x0000_0000_1111_1111);
                 nanos += i64::from(sample) & 0x0000_0000_1111_1111;
                 println!("{nanos:#x}");
                 let dt = DateTime::from_timestamp_nanos(nanos);
