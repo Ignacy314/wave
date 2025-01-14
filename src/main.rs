@@ -1,9 +1,26 @@
 use std::env;
 use std::mem::transmute;
+use std::path::Path;
 
-use chrono::DateTime;
+use chrono::{DateTime, Utc};
+
+fn make_wav<P: std::convert::AsRef<Path>>(from: DateTime<Utc>, to: DateTime<Utc>, path: P, dir: P) {
+    let spec = hound::WavSpec {
+        channels: 1,
+        sample_rate: 48000,
+        bits_per_sample: 32,
+        sample_format: hound::SampleFormat::Int,
+    };
+    let mut writer = hound::WavWriter::create(path, spec).unwrap();
+    let waves = std::fs::read_dir(dir).unwrap();
+
+    for wav in waves.flatten() {
+
+    }
+}
 
 fn main() {
+    //make_wav(DateTime::UNIX_EPOCH, DateTime::UNIX_EPOCH, "a");
     let args: Vec<String> = env::args().collect();
     let mut reader = hound::WavReader::open(args[1].clone()).unwrap();
     println!("{:?}", reader.spec());
@@ -12,6 +29,7 @@ fn main() {
     //let mut read = 0u8;
     let mut prev = 0i32;
     let mut diff = 0u64;
+    reader.seek(85000).unwrap();
     for s in reader.samples::<i32>() {
         let sample = s.unwrap();
         #[allow(clippy::cast_possible_wrap)]
