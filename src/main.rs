@@ -24,6 +24,9 @@ fn make_wav<P: std::convert::AsRef<Path>>(from: DateTime<Utc>, to: DateTime<Utc>
 
     let from_nanos = from.timestamp_nanos_opt().unwrap();
     let to_nanos = to.timestamp_nanos_opt().unwrap();
+
+    eprintln!("{from_nanos} {to_nanos}");
+
     let mut best_pps = None;
     let mut best_diff = i64::MAX;
 
