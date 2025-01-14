@@ -19,13 +19,12 @@ fn main() {
                 pps = false;
                 first_read = false;
                 nanos += i64::from(sample);
+                let dt = DateTime::from_timestamp_nanos(nanos);
+                eprintln!("{dt}");
             } else {
                 first_read = true;
                 nanos = i64::from(sample) << 32;
             }
-
-            let dt = DateTime::from_timestamp_nanos(nanos);
-            eprintln!("{dt}");
         }
     }
 }
