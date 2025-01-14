@@ -191,7 +191,7 @@ fn get_pps(f: &PathBuf) -> Vec<Pps> {
 }
 
 fn main() {
-    println!("{}", chrono::Utc::now());
+    println!("{}", chrono::Utc::now().timestamp_nanos_opt().unwrap());
     let args: Vec<String> = env::args().collect();
     let from = DateTime::parse_from_str(&args[1], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
     let to = DateTime::parse_from_str(&args[2], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
