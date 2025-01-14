@@ -55,7 +55,7 @@ fn make_wav<P: std::convert::AsRef<Path>>(
     eprintln!("{best_pps:?}");
 
     if let Some(Pps { nanos, sample, file }) = best_pps {
-        let mut nanos_diff = nanos - from_nanos;
+        let mut nanos_diff = from_nanos - nanos;
         let mut backward = false;
         let mut start_sample = 0u32;
         let mut start_file = file.clone();
