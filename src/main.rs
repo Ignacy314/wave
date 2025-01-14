@@ -4,10 +4,15 @@ use std::mem::transmute;
 use std::path::{Path, PathBuf};
 use std::{backtrace, env};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, FixedOffset, Utc};
 
 #[allow(clippy::too_many_lines)]
-fn make_wav<P: std::convert::AsRef<Path>>(from: DateTime<Utc>, to: DateTime<Utc>, path: P, dir: P) {
+fn make_wav<P: std::convert::AsRef<Path>>(
+    from: DateTime<FixedOffset>,
+    to: DateTime<FixedOffset>,
+    path: P,
+    dir: P,
+) {
     let spec = hound::WavSpec {
         channels: 1,
         sample_rate: 48000,
@@ -191,7 +196,7 @@ fn main() {
     let to = DateTime::parse_from_str(&args[2], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
     let path = &args[3];
     let dir = &args[4];
-    make_wav(from.into(), to.into(), path, dir);
+    make_wav(from, to, path, dir);
     //let mut reader = hound::WavReader::open(args[1].clone()).unwrap();
     //println!("{:?}", reader.spec());
     //let mut pps = false;
