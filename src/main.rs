@@ -177,6 +177,7 @@ fn get_pps(f: &PathBuf) -> Vec<Pps> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+    println!("{}", &args[1]);
     let from = DateTime::parse_from_str(&args[1], "%Y-%m-%d %H:%M:%S%.3f").unwrap();
     let to = DateTime::parse_from_str(&args[2], "%Y-%m-%d %H:%M:%S%.3f").unwrap();
     let path = &args[3];
