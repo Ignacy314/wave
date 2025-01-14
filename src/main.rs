@@ -9,8 +9,8 @@ fn main() {
     println!("{:?}", reader.spec());
     let mut pps = false;
     let mut first_read = false;
-    //let mut nanos = 0i64;
     let mut prev = 0i32;
+    let mut diff = 0u64;
     for s in reader.samples::<i32>() {
         let sample = s.unwrap();
         #[allow(clippy::cast_possible_wrap)]
@@ -22,11 +22,15 @@ fn main() {
                 first_read = false;
                 let nanos = unsafe { transmute::<[i32; 2], i64>([sample, prev]) };
                 let dt = DateTime::from_timestamp_nanos(nanos);
-                eprintln!("{dt}");
+                println!("{diff}");
+                diff = 0;
+                println!("{dt}");
             } else {
                 first_read = true;
                 prev = sample;
             }
+        } else {
+            diff += 1;
         }
     }
 }
