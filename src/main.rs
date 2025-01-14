@@ -36,6 +36,7 @@ fn main() {
                 let dt = DateTime::from_timestamp_nanos(nanos);
                 println!("{dt}");
                 read = 0;
+                pps = false;
             }
             //if first_read {
             //    pps = false;
