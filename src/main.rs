@@ -419,7 +419,7 @@ struct Pps {
 }
 
 fn get_pps(f: &PathBuf) -> Vec<Pps> {
-    println!("{f:?}");
+    //println!("{f:?}");
     let mut reader = hound::WavReader::open(f).unwrap();
     let mut pps = false;
     let mut first_read = false;
