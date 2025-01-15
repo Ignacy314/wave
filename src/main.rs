@@ -8,6 +8,45 @@ use std::{backtrace, env};
 use chrono::{DateTime, FixedOffset, Utc};
 use indicatif::{ProgressBar, ProgressStyle};
 
+fn find_best_pps(waves: &[PathBuf], from_nanos: i64) -> (Option<Pps>, i64) {
+    let mut best_pps = None;
+    let mut best_diff = i64::MAX;
+
+    let n = waves.len() as u64;
+    let pb = ProgressBar::new(n);
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    let t = f64::from(n as u32).log10().ceil() as u64;
+    pb.set_style(
+        ProgressStyle::with_template(&format!(
+            "[{{elapsed_precise}}] {{bar:40.cyan/blue}} {{pos:>{t}}}/{{len:{t}}} ({{percent}}%)"
+        ))
+        .unwrap()
+        .progress_chars("##-"),
+    );
+
+    for wav in waves {
+        let pps_vec = get_pps(wav);
+        for p in &pps_vec {
+            //eprintln!("{p:?}");
+        }
+        let best = pps_vec
+            .into_iter()
+            .min_by_key(|x| (x.nanos - from_nanos).abs());
+        if let Some(best) = best {
+            let diff = (best.nanos - from_nanos).abs();
+            if diff < best_diff {
+                best_pps = Some(best);
+                best_diff = diff;
+            }
+        }
+        pb.inc(1);
+    }
+
+    pb.finish();
+    (best_pps, best_diff)
+}
+
 struct CircularI2S {
     size: usize,
     inner_size: usize,
@@ -23,7 +62,7 @@ impl CircularI2S {
     const BUF_SIZE_INNER: usize = 8;
     const MID: usize = Self::BUF_SIZE_INNER / 2;
 
-    fn new<P: std::convert::AsRef<PathBuf>>(path: P, num: u8) -> Self {
+    fn new<P: std::convert::AsRef<Path>>(path: P, num: u8) -> Self {
         let paths: [String; Self::BUF_SIZE_INNER + 1] = (0..=Self::BUF_SIZE_INNER)
             .map(|i| format!("{}_{num}_{i}", path.as_ref().display()))
             .collect::<Vec<_>>()
@@ -64,16 +103,21 @@ impl CircularI2S {
         row_full
     }
 
+    fn set_inner(&mut self, value: i32, index: usize) -> bool {
+        self.buf[self.index][index] = value;
+        self.increment_index()
+    }
+
     fn push(&mut self, value: i32) -> bool {
         self.buf[self.index][self.inner_index] = value;
         self.increment_index()
     }
 
     fn get(&self, i: usize, j: usize) -> i32 {
-        self.buf[self.index][self.inner_index]
+        self.buf[i][j]
     }
 
-    fn compute_samples(&self) {
+    fn compute_samples(&mut self) {
         for i in 0..=Self::BUF_SIZE_INNER {
             let mut j = Self::MID * i;
             let step = Self::MID - i;
@@ -84,7 +128,15 @@ impl CircularI2S {
                 sample += f64::from(self.get(j, k)) / 8.0;
                 j += step;
             }
+
+            #[allow(clippy::cast_possible_truncation)]
+            let sample = sample as i32;
+            self.files[i].write_sample(sample);
         }
+    }
+
+    fn finalize(self) {
+        self.files.into_iter().for_each(|w| w.finalize().unwrap());
     }
 }
 
@@ -95,13 +147,10 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
     path: P,
     dir: P,
 ) {
-    let spec = hound::WavSpec {
-        channels: 1,
-        sample_rate: 48000,
-        bits_per_sample: 32,
-        sample_format: hound::SampleFormat::Int,
-    };
-    let mut writer = hound::WavWriter::create(path, spec).unwrap();
+    let mut bufs = [
+        CircularI2S::new(path.as_ref(), 1),
+        CircularI2S::new(path, 2),
+    ];
     let mut waves = std::fs::read_dir(dir)
         .unwrap()
         .flat_map(|f| f.map(|e| e.path()))
@@ -114,25 +163,7 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
 
     //eprintln!("{from_nanos} {to_nanos}");
 
-    let mut best_pps = None;
-    let mut best_diff = i64::MAX;
-
-    for wav in &waves {
-        let pps_vec = get_pps(wav);
-        for p in &pps_vec {
-            //eprintln!("{p:?}");
-        }
-        let best = pps_vec
-            .into_iter()
-            .min_by_key(|x| (x.nanos - from_nanos).abs());
-        if let Some(best) = best {
-            let diff = (best.nanos - from_nanos).abs();
-            if diff < best_diff {
-                best_pps = Some(best);
-                best_diff = diff;
-            }
-        }
-    }
+    let (mut best_pps, mut bet_diff) = find_best_pps(&waves, from_nanos);
 
     eprintln!("{best_pps:?}");
 
@@ -222,8 +253,13 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
             for s in reader.samples::<i32>() {
                 let sample = s.unwrap();
                 if start {
-                    // TODO: find start
-                    eprintln!("{sample:#x}");
+                    #[allow(clippy::cast_sign_loss)]
+                    let mic = ((sample as u32 & 0b1000) >> 3) as usize;
+                    #[allow(clippy::cast_sign_loss)]
+                    let inner_index = (sample as u32 & 0b111) as usize;
+                    if mic != 0 || inner_index != 0 {
+                        continue;
+                    }
                 }
                 #[allow(clippy::cast_possible_wrap)]
                 if sample == 0xeeee_eeee_u32 as i32 {
@@ -231,8 +267,16 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
                 } else if skip > 0 {
                     skip -= 1;
                 } else {
-                    // TODO: circular buffer insert here
-                    // then calculate diags and output to files
+                    #[allow(clippy::cast_sign_loss)]
+                    let mic = ((sample as u32 & 0b1000) >> 3) as usize;
+
+                    #[allow(clippy::cast_sign_loss)]
+                    let inner_index = (sample as u32 & 0b111) as usize;
+
+                    if bufs[mic].set_inner(sample, inner_index) {
+                        bufs[mic].compute_samples();
+                    }
+
                     samples_left -= 1;
                     pb.inc(1);
                     if samples_left == 0 {
@@ -246,7 +290,9 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
             }
         }
 
-        writer.finalize().unwrap();
+        for b in bufs {
+            b.finalize();
+        }
         pb.finish();
     }
 }
@@ -277,25 +323,7 @@ fn make_wav<P: std::convert::AsRef<Path>>(
 
     //eprintln!("{from_nanos} {to_nanos}");
 
-    let mut best_pps = None;
-    let mut best_diff = i64::MAX;
-
-    for wav in &waves {
-        let pps_vec = get_pps(wav);
-        for p in &pps_vec {
-            //eprintln!("{p:?}");
-        }
-        let best = pps_vec
-            .into_iter()
-            .min_by_key(|x| (x.nanos - from_nanos).abs());
-        if let Some(best) = best {
-            let diff = (best.nanos - from_nanos).abs();
-            if diff < best_diff {
-                best_pps = Some(best);
-                best_diff = diff;
-            }
-        }
-    }
+    let (mut best_pps, mut bet_diff) = find_best_pps(&waves, from_nanos);
 
     eprintln!("{best_pps:?}");
 
@@ -457,7 +485,15 @@ fn main() {
     let to = DateTime::parse_from_str(&args[2], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
     let path = &args[3];
     let dir = &args[4];
-    make_wav(from, to, path, dir);
+
+    let mode = &args[5];
+    if mode == "umc" {
+        make_wav(from, to, path, dir);
+    } else if mode == "i2s" {
+        make_wav_i2s(from, to, path, dir);
+    } else {
+        eprintln!("Last argument should be either \"umc\" or \"i2s\"");
+    }
     //let mut reader = hound::WavReader::open(args[1].clone()).unwrap();
     //println!("{:?}", reader.spec());
     //let mut pps = false;
