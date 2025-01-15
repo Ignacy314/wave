@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.39"
 hound = "3.5.1"
+indicatif = "0.17.9"
