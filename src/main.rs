@@ -367,7 +367,13 @@ fn make_wav<P: std::convert::AsRef<Path>>(
             } else {
                 samples_diff -= sample;
                 for wav in waves.iter().rev().skip_while(|x| **x != file).skip(1) {
-                    let mut reader = hound::WavReader::open(wav).unwrap();
+                    let mut reader = match hound::WavReader::open(wav) {
+                        Ok(r) => r,
+                        Err(e) => {
+                            eprintln!("seek start wav open: {e}");
+                            continue;
+                        }
+                    };
                     let wav_dur = reader.duration() / 2;
                     if samples_diff > wav_dur {
                         samples_diff -= wav_dur;
@@ -388,7 +394,13 @@ fn make_wav<P: std::convert::AsRef<Path>>(
             } else {
                 samples_diff -= (wav_dur - sample);
                 for wav in waves.iter().skip_while(|x| **x != file).skip(1) {
-                    let mut reader = hound::WavReader::open(wav).unwrap();
+                    let mut reader = match hound::WavReader::open(wav) {
+                        Ok(r) => r,
+                        Err(e) => {
+                            eprintln!("seek start wav open: {e}");
+                            continue;
+                        }
+                    };
                     let wav_dur = reader.duration() / 2;
                     if samples_diff > wav_dur {
                         samples_diff -= wav_dur;
@@ -467,11 +479,17 @@ struct Pps {
 
 fn get_pps(f: &PathBuf) -> Vec<Pps> {
     //println!("{f:?}");
-    let mut reader = hound::WavReader::open(f).unwrap();
+    let mut pps_vec = Vec::new();
+    let mut reader = match hound::WavReader::open(f) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("get_pps wav open: {e}");
+            return pps_vec;
+        }
+    };
     let mut pps = false;
     let mut first_read = false;
     let mut prev = 0i32;
-    let mut pps_vec = Vec::new();
     for (i, s) in reader.samples::<i32>().enumerate() {
         let sample = s.unwrap();
         #[allow(clippy::cast_possible_wrap)]
