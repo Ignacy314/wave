@@ -100,6 +100,7 @@ impl CircularI2S {
     }
 
     fn increment_index(&mut self) -> bool {
+        println!("{}", self.inner_index);
         let row_full = self.inner_index == Self::BUF_SIZE_INNER - 1;
         if row_full {
             self.inner_index = 0;
@@ -234,12 +235,13 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
         #[allow(clippy::cast_precision_loss)]
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_sign_loss)]
-        let mut samples_left = ((to_nanos - from_nanos) as f64 / 1e9_f64 * 48000.0).round() as u32;
+        let mut samples_left =
+            [((to_nanos - from_nanos) as f64 / 1e9_f64 * 48000.0).round() as u32; 2];
 
-        let pb = ProgressBar::new(u64::from(samples_left));
+        let pb = ProgressBar::new(u64::from(samples_left[0]));
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_sign_loss)]
-        let t = f64::from(samples_left).log10().ceil() as u64;
+        let t = f64::from(samples_left.iter().sum::<u32>()).log10().ceil() as u64;
         pb.set_style(
             ProgressStyle::with_template(&format!(
             "[{{elapsed_precise}}] {{bar:40.cyan/blue}} {{pos:>{t}}}/{{len:{t}}} ({{percent}}%)"
@@ -281,13 +283,13 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
                     #[allow(clippy::cast_sign_loss)]
                     let inner_index = (sample as u32 & 0b111) as usize;
 
-                    if bufs[mic].set_inner(sample, inner_index) {
+                    if samples_left[mic] > 0 && bufs[mic].set_inner(sample, inner_index) {
                         bufs[mic].compute_samples();
-                        samples_left -= 1;
+                        samples_left[mic] -= 1;
                         pb.inc(1);
                     }
 
-                    if samples_left == 0 {
+                    if samples_left.iter().all(|x| *x == 0) {
                         end = true;
                         break;
                     }
