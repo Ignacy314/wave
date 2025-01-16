@@ -44,7 +44,7 @@ fn find_best_pps(waves: &[PathBuf], from_nanos: i64) -> (Option<Pps>, i64) {
         if i >= 25 && best_diff <= 500_000_000 {
             break;
         }
-        if i >= 100 && best_diff <= 500_000_000 {
+        if i >= 100 && best_diff <= 30_000_000_000 {
             break;
         }
     }
@@ -254,7 +254,7 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
         for wav in waves.iter().skip_while(|x| **x != start_file) {
             let mut reader = hound::WavReader::open(wav).unwrap();
             if start {
-                reader.seek(start_sample / 2).unwrap();
+                reader.seek(start_sample / 4).unwrap();
             }
             for s in reader.samples::<i32>() {
                 let sample = s.unwrap();
