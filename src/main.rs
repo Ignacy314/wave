@@ -106,6 +106,8 @@ impl CircularI2S {
             self.inner_index = 0;
             self.index += 1;
             self.index %= self.size;
+        } else {
+            self.inner_index += 1;
         }
         row_full
     }
