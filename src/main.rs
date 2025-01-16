@@ -267,6 +267,7 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
                     if mic != 0 || inner_index != 0 {
                         continue;
                     }
+                    start = false;
                 }
                 #[allow(clippy::cast_possible_wrap)]
                 if sample == 0xeeee_eeee_u32 as i32 {
