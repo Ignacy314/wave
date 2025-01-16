@@ -25,7 +25,7 @@ fn find_best_pps(waves: &[PathBuf], from_nanos: i64) -> (Option<Pps>, i64) {
         .progress_chars("##-"),
     );
 
-    for wav in waves {
+    for (i, wav) in waves.iter().enumerate() {
         let pps_vec = get_pps(wav);
         for p in &pps_vec {
             //eprintln!("{p:?}");
@@ -41,6 +41,12 @@ fn find_best_pps(waves: &[PathBuf], from_nanos: i64) -> (Option<Pps>, i64) {
             }
         }
         pb.inc(1);
+        if i >= 25 && best_diff <= 500_000_000 {
+            break;
+        }
+        if i >= 100 && best_diff <= 500_000_000 {
+            break;
+        }
     }
 
     pb.finish();
