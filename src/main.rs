@@ -9,6 +9,7 @@ use chrono::{DateTime, FixedOffset, Utc};
 use indicatif::{ProgressBar, ProgressStyle};
 
 fn find_best_pps(waves: &[PathBuf], from_nanos: i64) -> (Option<Pps>, i64) {
+    eprintln!("{from_nanos}");
     let mut best_pps = None;
     let mut best_diff = i64::MAX;
 
