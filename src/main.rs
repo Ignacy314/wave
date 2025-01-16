@@ -283,10 +283,10 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
 
                     if bufs[mic].set_inner(sample, inner_index) {
                         bufs[mic].compute_samples();
+                        samples_left -= 1;
+                        pb.inc(1);
                     }
 
-                    samples_left -= 1;
-                    pb.inc(1);
                     if samples_left == 0 {
                         end = true;
                         break;
