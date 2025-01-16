@@ -261,7 +261,7 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
             let mut reader = match hound::WavReader::open(wav) {
                 Ok(r) => r,
                 Err(e) => {
-                    eprintln!("Hound WavReader open: {e}");
+                    //eprintln!("Hound WavReader open: {e}");
                     continue;
                 }
             };
@@ -370,7 +370,7 @@ fn make_wav<P: std::convert::AsRef<Path>>(
                     let mut reader = match hound::WavReader::open(wav) {
                         Ok(r) => r,
                         Err(e) => {
-                            eprintln!("seek start wav open: {e}");
+                            //eprintln!("seek start wav open: {e}");
                             continue;
                         }
                     };
@@ -397,7 +397,7 @@ fn make_wav<P: std::convert::AsRef<Path>>(
                     let mut reader = match hound::WavReader::open(wav) {
                         Ok(r) => r,
                         Err(e) => {
-                            eprintln!("seek start wav open: {e}");
+                            //eprintln!("seek start wav open: {e}");
                             continue;
                         }
                     };
@@ -483,7 +483,7 @@ fn get_pps(f: &PathBuf) -> Vec<Pps> {
     let mut reader = match hound::WavReader::open(f) {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("get_pps wav open: {e}");
+            //eprintln!("get_pps wav open: {e}");
             return pps_vec;
         }
     };
