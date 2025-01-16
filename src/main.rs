@@ -258,7 +258,13 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
         let mut end = false;
         for wav in waves.iter().skip_while(|x| **x != start_file) {
             //println!("{}", wav.display());
-            let mut reader = hound::WavReader::open(wav).unwrap();
+            let mut reader = match hound::WavReader::open(wav) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("Hound WavReader open: {e}");
+                    continue;
+                }
+            };
             if start {
                 reader.seek(start_sample / 4).unwrap();
             }
