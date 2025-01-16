@@ -100,7 +100,7 @@ impl CircularI2S {
     }
 
     fn increment_index(&mut self) -> bool {
-        let row_full = self.inner_index == Self::BUF_SIZE_INNER;
+        let row_full = self.inner_index == Self::BUF_SIZE_INNER - 1;
         if row_full {
             self.inner_index = 0;
             self.index += 1;
