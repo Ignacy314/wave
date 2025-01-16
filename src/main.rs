@@ -239,10 +239,12 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
         let mut samples_left =
             [((to_nanos - from_nanos) as f64 / 1e9_f64 * 48000.0).round() as u32; 2];
 
-        let pb = ProgressBar::new(u64::from(samples_left[0]));
+        #[allow(clippy::cast_possible_truncation)]
+        let n = samples_left[0] * samples_left.len() as u32;
+        let pb = ProgressBar::new(u64::from(n));
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_sign_loss)]
-        let t = f64::from(samples_left.iter().sum::<u32>()).log10().ceil() as u64;
+        let t = f64::from(n).log10().ceil() as u64;
         pb.set_style(
             ProgressStyle::with_template(&format!(
             "[{{elapsed_precise}}] {{bar:40.cyan/blue}} {{pos:>{t}}}/{{len:{t}}} ({{percent}}%)"
