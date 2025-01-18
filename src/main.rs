@@ -9,7 +9,6 @@ use chrono::{DateTime, FixedOffset, Utc};
 use indicatif::{ProgressBar, ProgressStyle};
 
 fn find_best_pps(waves: &[PathBuf], from_nanos: i64) -> (Option<Pps>, i64) {
-    eprintln!("{from_nanos}");
     let mut best_pps = None;
     let mut best_diff = i64::MAX;
 
@@ -28,12 +27,11 @@ fn find_best_pps(waves: &[PathBuf], from_nanos: i64) -> (Option<Pps>, i64) {
 
     for (i, wav) in waves.iter().enumerate() {
         let pps_vec = get_pps(wav);
-        for p in &pps_vec {
-            //eprintln!("{p:?}");
-        }
+
         let best = pps_vec
             .into_iter()
             .min_by_key(|x| (x.nanos - from_nanos).abs());
+
         if let Some(best) = best {
             let diff = (best.nanos - from_nanos).abs();
             if diff < best_diff {
@@ -41,7 +39,9 @@ fn find_best_pps(waves: &[PathBuf], from_nanos: i64) -> (Option<Pps>, i64) {
                 best_diff = diff;
             }
         }
+
         pb.inc(1);
+
         if i >= 25 && best_diff <= 500_000_000 {
             break;
         }
@@ -165,12 +165,9 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
         .flat_map(|f| f.map(|e| e.path()))
         .collect::<Vec<_>>();
     waves.sort_unstable();
-    //eprintln!("{waves:?}");
 
     let from_nanos = from.timestamp_nanos_opt().unwrap();
     let to_nanos = to.timestamp_nanos_opt().unwrap();
-
-    //eprintln!("{from_nanos} {to_nanos}");
 
     let (mut best_pps, mut bet_diff) = find_best_pps(&waves, from_nanos);
 
@@ -258,11 +255,9 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
         let mut skip = 0;
         let mut end = false;
         for wav in waves.iter().skip_while(|x| **x != start_file) {
-            //println!("{}", wav.display());
             let mut reader = match hound::WavReader::open(wav) {
                 Ok(r) => r,
                 Err(e) => {
-                    //eprintln!("Hound WavReader open: {e}");
                     continue;
                 }
             };
@@ -336,12 +331,9 @@ fn make_wav<P: std::convert::AsRef<Path>>(
         .flat_map(|f| f.map(|e| e.path()))
         .collect::<Vec<_>>();
     waves.sort_unstable();
-    //eprintln!("{waves:?}");
 
     let from_nanos = from.timestamp_nanos_opt().unwrap();
     let to_nanos = to.timestamp_nanos_opt().unwrap();
-
-    //eprintln!("{from_nanos} {to_nanos}");
 
     let (mut best_pps, mut bet_diff) = find_best_pps(&waves, from_nanos);
 
@@ -371,7 +363,6 @@ fn make_wav<P: std::convert::AsRef<Path>>(
                     let mut reader = match hound::WavReader::open(wav) {
                         Ok(r) => r,
                         Err(e) => {
-                            //eprintln!("seek start wav open: {e}");
                             continue;
                         }
                     };
@@ -398,7 +389,6 @@ fn make_wav<P: std::convert::AsRef<Path>>(
                     let mut reader = match hound::WavReader::open(wav) {
                         Ok(r) => r,
                         Err(e) => {
-                            //eprintln!("seek start wav open: {e}");
                             continue;
                         }
                     };
@@ -479,12 +469,10 @@ struct Pps {
 }
 
 fn get_pps(f: &PathBuf) -> Vec<Pps> {
-    //println!("{f:?}");
     let mut pps_vec = Vec::new();
     let mut reader = match hound::WavReader::open(f) {
         Ok(r) => r,
         Err(e) => {
-            //eprintln!("get_pps wav open: {e}");
             return pps_vec;
         }
     };
@@ -517,7 +505,6 @@ fn get_pps(f: &PathBuf) -> Vec<Pps> {
 }
 
 fn main() {
-    //println!("{}", chrono::Utc::now().timestamp_nanos_opt().unwrap());
     let args: Vec<String> = env::args().collect();
     let from = DateTime::parse_from_str(&args[1], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
     let to = DateTime::parse_from_str(&args[2], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
@@ -532,56 +519,4 @@ fn main() {
     } else {
         eprintln!("Last argument should be either \"umc\" or \"i2s\"");
     }
-    //let mut reader = hound::WavReader::open(args[1].clone()).unwrap();
-    //println!("{:?}", reader.spec());
-    //let mut pps = false;
-    //let mut first_read = false;
-    ////let mut read = 0u8;
-    //let mut prev = 0i32;
-    //let mut diff = 0u64;
-    //reader
-    //    .seek(85000 / u32::from(reader.spec().channels))
-    //    .unwrap();
-    //for s in reader.samples::<i32>() {
-    //    let sample = s.unwrap();
-    //    #[allow(clippy::cast_possible_wrap)]
-    //    if sample == 0xeeee_eeee_u32 as i32 {
-    //        pps = true;
-    //    } else if pps {
-    //        //if read == 0 {
-    //        //    prev = sample;
-    //        //    read = 1;
-    //        //} else if read == 1 {
-    //        //    let nanos = unsafe { transmute::<[i32; 2], i64>([sample, prev]) };
-    //        //    let dt = DateTime::from_timestamp_nanos(nanos);
-    //        //    println!("{diff}");
-    //        //    diff = 0;
-    //        //    println!("{dt}");
-    //        //    read = 2;
-    //        //} else if read == 2 {
-    //        //    prev = sample;
-    //        //    read = 3;
-    //        //} else {
-    //        //    let nanos = unsafe { transmute::<[i32; 2], i64>([sample, prev]) };
-    //        //    let dt = DateTime::from_timestamp_nanos(nanos);
-    //        //    println!("{dt}");
-    //        //    read = 0;
-    //        //    pps = false;
-    //        //}
-    //        if first_read {
-    //            pps = false;
-    //            first_read = false;
-    //            let nanos = unsafe { transmute::<[i32; 2], i64>([sample, prev]) };
-    //            let dt = DateTime::from_timestamp_nanos(nanos);
-    //            println!("{diff}");
-    //            diff = 0;
-    //            println!("{dt}");
-    //        } else {
-    //            first_read = true;
-    //            prev = sample;
-    //        }
-    //    } else {
-    //        diff += 1;
-    //    }
-    //}
 }
