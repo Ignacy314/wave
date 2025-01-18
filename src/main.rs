@@ -321,8 +321,8 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
 fn make_wav<P: std::convert::AsRef<Path>>(
     from: DateTime<FixedOffset>,
     to: DateTime<FixedOffset>,
-    path: P,
-    dir: P,
+    output: P,
+    input_dir: P,
 ) {
     let spec = hound::WavSpec {
         channels: 1,
@@ -330,8 +330,8 @@ fn make_wav<P: std::convert::AsRef<Path>>(
         bits_per_sample: 32,
         sample_format: hound::SampleFormat::Int,
     };
-    let mut writer = hound::WavWriter::create(path, spec).unwrap();
-    let mut waves = std::fs::read_dir(dir)
+    let mut writer = hound::WavWriter::create(output, spec).unwrap();
+    let mut waves = std::fs::read_dir(input_dir)
         .unwrap()
         .flat_map(|f| f.map(|e| e.path()))
         .collect::<Vec<_>>();
@@ -521,14 +521,14 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let from = DateTime::parse_from_str(&args[1], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
     let to = DateTime::parse_from_str(&args[2], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
-    let path = &args[3];
-    let dir = &args[4];
+    let output = &args[3];
+    let input_dir = &args[4];
 
     let mode = &args[5];
     if mode == "umc" {
-        make_wav(from, to, path, dir);
+        make_wav(from, to, output, input_dir);
     } else if mode == "i2s" {
-        make_wav_i2s(from, to, path, dir);
+        make_wav_i2s(from, to, output, input_dir);
     } else {
         eprintln!("Last argument should be either \"umc\" or \"i2s\"");
     }
