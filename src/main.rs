@@ -194,7 +194,12 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
             } else {
                 samples_diff -= sample;
                 for wav in waves.iter().rev().skip_while(|x| **x != file).skip(1) {
-                    let mut reader = hound::WavReader::open(wav).unwrap();
+                    let mut reader = match hound::WavReader::open(wav) {
+                        Ok(r) => r,
+                        Err(e) => {
+                            continue;
+                        }
+                    };
                     let wav_dur = reader.duration() / 4;
                     if samples_diff > wav_dur {
                         samples_diff -= wav_dur;
@@ -215,7 +220,12 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
             } else {
                 samples_diff -= (wav_dur - sample);
                 for wav in waves.iter().skip_while(|x| **x != file).skip(1) {
-                    let mut reader = hound::WavReader::open(wav).unwrap();
+                    let mut reader = match hound::WavReader::open(wav) {
+                        Ok(r) => r,
+                        Err(e) => {
+                            continue;
+                        }
+                    };
                     let wav_dur = reader.duration() / 4;
                     if samples_diff > wav_dur {
                         samples_diff -= wav_dur;
@@ -428,7 +438,12 @@ fn make_wav<P: std::convert::AsRef<Path>>(
         let mut skip = 0;
         let mut end = false;
         for wav in waves.iter().skip_while(|x| **x != start_file) {
-            let mut reader = hound::WavReader::open(wav).unwrap();
+            let mut reader = match hound::WavReader::open(wav) {
+                Ok(r) => r,
+                Err(e) => {
+                    continue;
+                }
+            };
             if start {
                 reader.seek(start_sample / 2).unwrap();
                 start = false;
