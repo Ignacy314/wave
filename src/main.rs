@@ -507,7 +507,7 @@ fn get_pps(f: &PathBuf) -> Vec<Pps> {
                 #[allow(clippy::cast_possible_truncation)]
                 pps_vec.push(Pps {
                     nanos,
-                    sample: i as u32,
+                    sample: (i - 2) as u32,
                     file: f.clone(),
                 });
             } else {
