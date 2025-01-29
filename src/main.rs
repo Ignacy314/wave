@@ -293,10 +293,10 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
                     start = false;
                 }
                 #[allow(clippy::cast_possible_wrap)]
-                if sample == 0xeeee_eeee_u32 as i32 {
-                    skip += 3;
-                } else if skip > 0 {
+                if skip > 0 {
                     skip -= 1;
+                } else if sample == 0xeeee_eeee_u32 as i32 {
+                    skip += 3;
                 } else {
                     #[allow(clippy::cast_sign_loss)]
                     let mic = ((sample as u32 & 0b1000) >> 3) as usize;
@@ -457,10 +457,10 @@ fn make_wav<P: std::convert::AsRef<Path>>(
             for s in reader.samples::<i32>() {
                 let sample = s.unwrap();
                 #[allow(clippy::cast_possible_wrap)]
-                if sample == 0xeeee_eeee_u32 as i32 {
-                    skip += 3;
-                } else if skip > 0 {
+                if skip > 0 {
                     skip -= 1;
+                } else if sample == 0xeeee_eeee_u32 as i32 {
+                    skip += 3;
                 } else {
                     skip += 1;
                     writer.write_sample(sample);
