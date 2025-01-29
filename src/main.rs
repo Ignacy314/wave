@@ -104,8 +104,12 @@ impl CircularI2S {
         let row_full = self.inner_index == Self::BUF_SIZE_INNER - 1;
         if row_full {
             self.inner_index = 0;
-            self.index += 1;
-            self.index %= self.size;
+            if self.index == Self::BUF_SIZE - 1 {
+                self.filled = true;
+                self.index = 0;
+            } else {
+                self.index += 1;
+            }
         } else {
             self.inner_index += 1;
         }
@@ -127,20 +131,22 @@ impl CircularI2S {
     }
 
     fn compute_samples(&mut self) {
-        for i in 0..=Self::BUF_SIZE_INNER {
-            let mut j = Self::MID * i;
-            let step = Self::MID - i;
+        if self.filled {
+            for i in 0..=Self::BUF_SIZE_INNER {
+                let mut j = Self::MID * i;
+                let step = Self::MID - i;
 
-            let mut sample = 0f64;
+                let mut sample = 0f64;
 
-            for k in 0..8 {
-                sample += f64::from(self.get(j, k)) / 8.0;
-                j += step;
+                for k in 0..8 {
+                    sample += f64::from(self.get(j, k)) / 8.0;
+                    j += step;
+                }
+
+                #[allow(clippy::cast_possible_truncation)]
+                let sample = sample as i32;
+                self.files[i].write_sample(sample);
             }
-
-            #[allow(clippy::cast_possible_truncation)]
-            let sample = sample as i32;
-            self.files[i].write_sample(sample);
         }
     }
 
