@@ -42,10 +42,10 @@ fn find_best_pps(waves: &[PathBuf], from_nanos: i64) -> (Option<Pps>, i64) {
 
         pb.inc(1);
 
-        if i >= 25 && best_diff <= 500_000_000 {
+        if i >= 5 && best_diff <= 500_000_000 {
             break;
         }
-        if i >= 100 && best_diff <= 30_000_000_000 {
+        if i >= 15 && best_diff <= 60_000_000_000 {
             break;
         }
     }
