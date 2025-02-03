@@ -5,7 +5,7 @@ use std::mem::transmute;
 use std::path::{Path, PathBuf};
 use std::{backtrace, env};
 use std::fs;
-use filetime::FileTime;
+//use filetime::FileTime;
 
 use chrono::{DateTime, FixedOffset, Utc};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -17,12 +17,12 @@ fn find_best_pps(dir: &Path, from_nanos: i64) -> (Option<Pps>, i64, Vec<PathBuf>
         .flat_map(|f| f.map(|e| e.path()))
         .filter(|f| {
             let meta = fs::metadata(f).unwrap();
-            let mtime = FileTime::from_last_modification_time(&meta);
-            let unix_sec = mtime.unix_seconds();
-            let nanos = mtime.nanoseconds();
-            println!("{}: {} {}", f.to_str().unwrap(), nanos, unix_sec);
-            //nanos >= start_nanos
-            true
+            let str = f.to_str().unwrap();
+            let str = &str[..str.len() - 1];
+            let nanos = str.parse::<i64>().unwrap();
+            println!("{}: {}", f.to_str().unwrap(), nanos);
+            nanos >= start_nanos
+            //true
         })
         .collect::<Vec<_>>();
     waves.sort_unstable();
