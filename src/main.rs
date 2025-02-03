@@ -26,15 +26,12 @@ fn find_best_pps(dir: &Path, from_nanos: i64) -> (Option<Pps>, i64, Vec<PathBuf>
             let meta = fs::metadata(f).unwrap();
             let str = f.file_name().unwrap().to_str().unwrap();
             let str = &str[..str.len() - 4];
-            println!("{str}");
             let nanos = str.parse::<i64>().unwrap();
-            println!("{}: {}", f.to_str().unwrap(), nanos - start_nanos);
             nanos >= start_nanos
             //true
         })
         .collect::<Vec<_>>();
     waves.sort_unstable();
-    println!("{}", waves.len());
 
     let mut best_pps = None;
     let mut best_diff = i64::MAX;
