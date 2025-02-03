@@ -28,7 +28,6 @@ fn find_best_pps(dir: &Path, from_nanos: i64) -> (Option<Pps>, i64, Vec<PathBuf>
             let str = &str[..str.len() - 4];
             let nanos = str.parse::<i64>().unwrap();
             nanos >= start_nanos
-            //true
         })
         .collect::<Vec<_>>();
     waves.sort_unstable();
