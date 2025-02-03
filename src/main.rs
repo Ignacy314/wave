@@ -1,10 +1,10 @@
 #![allow(unused)]
+use std::fs;
 use std::fs::{DirEntry, File};
 use std::io::BufWriter;
 use std::mem::transmute;
 use std::path::{Path, PathBuf};
 use std::{backtrace, env};
-use std::fs;
 //use filetime::FileTime;
 
 use chrono::{DateTime, FixedOffset, Utc};
@@ -16,6 +16,13 @@ fn find_best_pps(dir: &Path, from_nanos: i64) -> (Option<Pps>, i64, Vec<PathBuf>
         .unwrap()
         .flat_map(|f| f.map(|e| e.path()))
         .filter(|f| {
+            if let Some(ext) = f.extension() {
+                if !ext.eq("wav") {
+                    return false;
+                }
+            } else {
+                return false;
+            }
             let meta = fs::metadata(f).unwrap();
             let str = f.file_name().unwrap().to_str().unwrap();
             let str = &str[..str.len() - 4];
