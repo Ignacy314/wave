@@ -34,6 +34,7 @@ fn find_best_pps(dir: &Path, from_nanos: i64) -> (Option<Pps>, i64, Vec<PathBuf>
         })
         .collect::<Vec<_>>();
     waves.sort_unstable();
+    println!("{}", waves.len());
 
     let mut best_pps = None;
     let mut best_diff = i64::MAX;
