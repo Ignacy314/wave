@@ -19,8 +19,8 @@ fn find_best_pps(dir: &Path, from_nanos: i64) -> (Option<Pps>, i64, Vec<PathBuf>
             let meta = fs::metadata(f).unwrap();
             let mtime = FileTime::from_last_modification_time(&meta);
             let unix_sec = mtime.unix_seconds();
-            let nanos = i64::from(mtime.nanoseconds()) + unix_sec * 1_000_000_000;
-            println!("{}: {}", f.to_str().unwrap(), nanos);
+            let nanos = i64::from(mtime.nanoseconds());
+            println!("{}: {} {}", f.to_str().unwrap(), nanos, unix_sec);
             nanos >= start_nanos
         })
         .collect::<Vec<_>>();
