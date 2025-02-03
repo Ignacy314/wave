@@ -19,6 +19,7 @@ fn find_best_pps(dir: &Path, from_nanos: i64) -> (Option<Pps>, i64, Vec<PathBuf>
             let meta = fs::metadata(f).unwrap();
             let str = f.to_str().unwrap();
             let str = &str[..str.len() - 1];
+            println!("{str}");
             let nanos = str.parse::<i64>().unwrap();
             println!("{}: {}", f.to_str().unwrap(), nanos);
             nanos >= start_nanos
