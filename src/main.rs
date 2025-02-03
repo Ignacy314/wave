@@ -4,11 +4,28 @@ use std::io::BufWriter;
 use std::mem::transmute;
 use std::path::{Path, PathBuf};
 use std::{backtrace, env};
+use std::fs;
+use filetime::FileTime;
 
 use chrono::{DateTime, FixedOffset, Utc};
 use indicatif::{ProgressBar, ProgressStyle};
 
-fn find_best_pps(waves: &[PathBuf], from_nanos: i64) -> (Option<Pps>, i64) {
+fn find_best_pps(dir: &Path, from_nanos: i64) -> (Option<Pps>, i64, Vec<PathBuf>) {
+    let start_nanos = from_nanos - 1_000_000_000 * 60;
+    let mut waves = std::fs::read_dir(dir)
+        .unwrap()
+        .flat_map(|f| f.map(|e| e.path()))
+        .filter(|f| {
+            let meta = fs::metadata(f).unwrap();
+            let mtime = FileTime::from_last_modification_time(&meta);
+            let unix_sec = mtime.unix_seconds();
+            let nanos = i64::from(mtime.nanoseconds()) + unix_sec * 1_000_000_000;
+            println!("{}: {}", f.to_str().unwrap(), nanos);
+            nanos >= start_nanos
+        })
+        .collect::<Vec<_>>();
+    waves.sort_unstable();
+
     let mut best_pps = None;
     let mut best_diff = i64::MAX;
 
@@ -51,7 +68,7 @@ fn find_best_pps(waves: &[PathBuf], from_nanos: i64) -> (Option<Pps>, i64) {
     }
 
     pb.finish();
-    (best_pps, best_diff)
+    (best_pps, best_diff, waves)
 }
 
 struct CircularI2S {
@@ -166,16 +183,24 @@ fn make_wav_i2s<P: std::convert::AsRef<Path>>(
         CircularI2S::new(path.as_ref(), 1),
         CircularI2S::new(path, 2),
     ];
-    let mut waves = std::fs::read_dir(dir)
-        .unwrap()
-        .flat_map(|f| f.map(|e| e.path()))
-        .collect::<Vec<_>>();
-    waves.sort_unstable();
+    //let mut waves = std::fs::read_dir(dir)
+    //    .unwrap()
+    //    .flat_map(|f| f.map(|e| e.path()))
+    //    .filter(|f| {
+    //        let meta = fs::metadata(f).unwrap();
+    //        let mtime = FileTime::from_last_modification_time(&meta);
+    //        let unix_sec = mtime.unix_seconds();
+    //        let nanos = i64::from(mtime.nanoseconds()) + unix_sec * 1_000_000_000;
+    //        println!("{}: {}", f.to_str().unwrap(), nanos);
+    //        true
+    //    })
+    //    .collect::<Vec<_>>();
+    //waves.sort_unstable();
 
     let from_nanos = from.timestamp_nanos_opt().unwrap();
     let to_nanos = to.timestamp_nanos_opt().unwrap();
 
-    let (mut best_pps, mut bet_diff) = find_best_pps(&waves, from_nanos);
+    let (mut best_pps, mut bet_diff, waves) = find_best_pps(dir.as_ref(), from_nanos);
 
     eprintln!("{best_pps:?}");
 
@@ -342,16 +367,16 @@ fn make_wav<P: std::convert::AsRef<Path>>(
         sample_format: hound::SampleFormat::Int,
     };
     let mut writer = hound::WavWriter::create(output, spec).unwrap();
-    let mut waves = std::fs::read_dir(input_dir)
-        .unwrap()
-        .flat_map(|f| f.map(|e| e.path()))
-        .collect::<Vec<_>>();
-    waves.sort_unstable();
+    //let mut waves = std::fs::read_dir(input_dir)
+    //    .unwrap()
+    //    .flat_map(|f| f.map(|e| e.path()))
+    //    .collect::<Vec<_>>();
+    //waves.sort_unstable();
 
     let from_nanos = from.timestamp_nanos_opt().unwrap();
     let to_nanos = to.timestamp_nanos_opt().unwrap();
 
-    let (mut best_pps, mut bet_diff) = find_best_pps(&waves, from_nanos);
+    let (mut best_pps, mut bet_diff, waves) = find_best_pps(input_dir.as_ref(), from_nanos);
 
     eprintln!("{best_pps:?}");
 
