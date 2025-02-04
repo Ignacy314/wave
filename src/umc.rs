@@ -18,7 +18,9 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         bits_per_sample: 32,
         sample_format: hound::SampleFormat::Int,
     };
-    let mut writer = hound::WavWriter::create(output, spec).unwrap();
+    let mut writer =
+        hound::WavWriter::create(format!("{}.wav", output.as_ref().to_str().unwrap()), spec)
+            .unwrap();
 
     let from_nanos = from.timestamp_nanos_opt().unwrap();
     let to_nanos = to.timestamp_nanos_opt().unwrap();
