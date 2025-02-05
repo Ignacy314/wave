@@ -68,8 +68,8 @@ impl Cursor {
             format!("{}_{}-{}.wav", self.filename, self.current_start, self.drone_sample);
         println!("{new_filename}");
         fs::rename(self.filename.clone(), new_filename).unwrap();
-        self.advance_by(advance_by);
         self.writer = hound::WavWriter::create(self.filename.clone(), self.spec).unwrap();
+        self.advance_by(advance_by);
         self.current_start = self.drone_sample;
         self
     }
