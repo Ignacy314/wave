@@ -81,6 +81,7 @@ impl Cursor {
     }
 
     fn process_error(&mut self, curr: usize, waves: &[PathBuf]) -> Option<ProcessResult> {
+        println!("{}", waves[curr].to_str().unwrap());
         if self.index >= self.breaks.len() {
             return None;
         }
