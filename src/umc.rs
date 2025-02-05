@@ -135,7 +135,7 @@ struct Record {
 #[derive(Debug, serde::Deserialize)]
 struct ErrorTime {
     start: i64,
-    end: i64
+    end: i64,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -270,8 +270,10 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                             }
                             cursor = cursor.finalize_writer(res.advance_samples_by).unwrap();
                             samples_left -= res.advance_samples_by;
+                            process_res = None;
+                        } else {
+                            res.write_samples_from_curr -= 1;
                         }
-                        res.write_samples_from_curr -= 1;
                     }
                     pos_in_file += 1;
                     skip += 1;
