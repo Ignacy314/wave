@@ -81,6 +81,7 @@ impl Cursor {
     }
 
     fn process_error(&mut self, curr: usize, waves: &[PathBuf]) -> Option<ProcessResult> {
+        println!("{curr}");
         if self.index >= self.breaks.len() {
             return None;
         }
@@ -232,8 +233,9 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                     res.advance_files -= 1;
                     continue;
                 }
+            } else {
+                process_res = cursor.process_error(i, &waves);
             }
-            process_res = cursor.process_error(i, &waves);
             pos_in_file = 1u32;
             pps = false;
             let mut reader = match hound::WavReader::open(wav) {
