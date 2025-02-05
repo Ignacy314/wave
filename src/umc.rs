@@ -49,6 +49,10 @@ impl Cursor {
         }
     }
 
+    fn add_break(&mut self, start: i64, end: i64) {
+        self.breaks.push((start, end));
+    }
+
     fn advance_by(&mut self, samples: u32) {
         self.audio_sample += samples;
         while self.audio_sample > AUDIO_PER_DRONE_SAMPLES {
@@ -128,13 +132,19 @@ struct Record {
     rfc: String,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ErrorTime {
+    start: i64,
+    end: i64
+}
+
 #[allow(clippy::too_many_lines)]
 pub fn make_wav<P: std::convert::AsRef<Path>>(
     timestamps: Option<(DateTime<FixedOffset>, DateTime<FixedOffset>)>,
     output: P,
     input_dir: P,
     csv: Option<P>,
-    _errors: Option<P>,
+    errors: Option<P>,
 ) {
     let spec = hound::WavSpec {
         channels: 1,
@@ -174,6 +184,14 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     } else {
         (0, 0)
     };
+
+    if let Some(errors) = errors {
+        let mut rdr = csv::Reader::from_path(errors).unwrap();
+        for res in rdr.deserialize() {
+            let record: ErrorTime = res.unwrap();
+            cursor.add_break(record.start, record.end);
+        }
+    }
 
     let (best_pps, mut _best_diff, waves) = find_best(input_dir.as_ref(), from_nanos);
 
