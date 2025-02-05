@@ -195,6 +195,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     }
 
     let (best_pps, mut _best_diff, waves) = find_best(input_dir.as_ref(), from_nanos);
+    println!("{waves:?}");
 
     eprintln!("{best_pps:?}");
 
