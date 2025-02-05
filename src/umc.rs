@@ -91,7 +91,6 @@ impl Cursor {
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_sign_loss)]
         if wav_file_to_nanos(&waves[curr + 1]) > start {
-            println!("{} {}", wav_file_to_nanos(&waves[curr + 1]), start);
             self.index += 1;
             let curr_nanos = wav_file_to_nanos(&waves[curr]);
             let write_nanos_from_curr = start - curr_nanos;
@@ -112,6 +111,7 @@ impl Cursor {
             }
             let nanos_pos_in_end_file = end - end_file_nanos;
             let pos_in_end_file = (nanos_pos_in_end_file * 48 / 1_000_000) as u32;
+            println!("{} {} {} {} {}", start, end, write_nanos_from_curr, end_file_nanos, pos_in_end_file);
             return Some(ProcessResult {
                 write_samples_from_curr,
                 advance_files: i as u32,
@@ -195,7 +195,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     }
 
     let (best_pps, mut _best_diff, waves) = find_best(input_dir.as_ref(), from_nanos);
-    println!("{waves:?}");
 
     eprintln!("{best_pps:?}");
 
