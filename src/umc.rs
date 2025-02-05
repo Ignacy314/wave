@@ -56,6 +56,7 @@ impl Cursor {
     fn advance_by(&mut self, samples: u32) {
         self.audio_sample += samples;
         while self.audio_sample > AUDIO_PER_DRONE_SAMPLES {
+            println!("2400 audio samples, 50 ms");
             self.drone_sample += 1;
             self.audio_sample -= AUDIO_PER_DRONE_SAMPLES;
         }
