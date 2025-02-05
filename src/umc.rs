@@ -62,16 +62,19 @@ impl Cursor {
         self.advance_by(1);
     }
 
-    fn finalize_writer(mut self, advance_by: u32) -> Self {
+    fn finalize_writer(mut self, advance_by: u32) -> Option<Self> {
         self.writer.finalize().unwrap();
         let new_filename =
             format!("{}_{}-{}.wav", self.filename, self.current_start, self.drone_sample);
         println!("{new_filename}");
         fs::rename(self.filename.clone(), new_filename).unwrap();
+        if advance_by == u32::MAX {
+            return None;
+        }
         self.writer = hound::WavWriter::create(self.filename.clone(), self.spec).unwrap();
         self.advance_by(advance_by);
         self.current_start = self.drone_sample;
-        self
+        Some(self)
     }
 
     fn process_error(&mut self, curr: usize, waves: &[PathBuf]) -> Option<ProcessResult> {
@@ -248,7 +251,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                                 pos_in_file += 1;
                                 continue;
                             }
-                            cursor = cursor.finalize_writer(res.advance_samples_by);
+                            cursor = cursor.finalize_writer(res.advance_samples_by).unwrap();
                         }
                         res.write_samples_from_curr -= 1;
                     }
@@ -268,7 +271,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             }
         }
 
-        cursor.finalize_writer(0);
+        cursor.finalize_writer(u32::MAX);
         pb.finish_with_message(format!("Samples left: {samples_left}"));
     }
 }
