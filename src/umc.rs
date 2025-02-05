@@ -178,7 +178,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             }
         }
         let dt = DateTime::parse_from_rfc3339(&rfc).unwrap();
-        time_counter -= 1;
+        time_counter = 20 - time_counter;
         let start = dt.timestamp_nanos_opt().unwrap() + 50_000_000 * time_counter;
         let end = start + (counter - 1) * 50_000_000;
         println!("{start}");
