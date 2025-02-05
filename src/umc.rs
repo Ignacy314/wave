@@ -115,12 +115,13 @@ impl Cursor {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug, serde::Deserialize)]
 struct Record {
-    _clock: f64,
-    _lon: f64,
-    _lat: f64,
-    _alt: f64,
+    clock: f64,
+    lon: f64,
+    lat: f64,
+    alt: f64,
     rfc: String,
 }
 
