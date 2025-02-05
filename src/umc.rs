@@ -111,7 +111,15 @@ impl Cursor {
             }
             let nanos_pos_in_end_file = end - end_file_nanos;
             let pos_in_end_file = (nanos_pos_in_end_file * 48 / 1_000_000) as u32;
-            println!("{} {} {} {} {} {}", start, end, write_nanos_from_curr, end_file_nanos, pos_in_end_file, self.drone_sample);
+            println!(
+                "{} {} {} {} {} {}",
+                start,
+                end,
+                write_nanos_from_curr,
+                end_file_nanos,
+                pos_in_end_file,
+                self.drone_sample
+            );
             return Some(ProcessResult {
                 write_samples_from_curr,
                 advance_files: i as u32,
@@ -229,7 +237,11 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         let mut pps;
         let mut pos_in_file;
         let mut process_res: Option<ProcessResult> = None;
-        for (i, wav) in waves.iter().skip_while(|x| **x != start_file).enumerate() {
+        for (i, wav) in waves
+            .iter()
+            .enumerate()
+            .skip_while(|(_i, x)| **x != start_file)
+        {
             if let Some(res) = process_res.as_mut() {
                 if res.advance_files > 0 {
                     res.advance_files -= 1;
