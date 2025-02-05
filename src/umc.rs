@@ -81,7 +81,6 @@ impl Cursor {
     }
 
     fn process_error(&mut self, curr: usize, waves: &[PathBuf]) -> Option<ProcessResult> {
-        println!("{curr}");
         if self.index >= self.breaks.len() {
             return None;
         }
@@ -92,6 +91,7 @@ impl Cursor {
         #[allow(clippy::cast_possible_truncation)]
         #[allow(clippy::cast_sign_loss)]
         if wav_file_to_nanos(&waves[curr + 1]) > start {
+            println!("{} {}", wav_file_to_nanos(&waves[curr + 1]), start);
             self.index += 1;
             let curr_nanos = wav_file_to_nanos(&waves[curr]);
             let write_nanos_from_curr = start - curr_nanos;
