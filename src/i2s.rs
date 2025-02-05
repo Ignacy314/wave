@@ -125,7 +125,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             timestamps.1.timestamp_nanos_opt().unwrap(),
         )
     } else {
-        (0, 0)
+        panic!("i2s mode only works with timestamps");
     };
 
     //let from_nanos = from.timestamp_nanos_opt().unwrap();
