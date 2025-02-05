@@ -110,8 +110,7 @@ impl CircularI2S {
 
 #[allow(clippy::too_many_lines)]
 pub fn make_wav<P: std::convert::AsRef<Path>>(
-    from: DateTime<FixedOffset>,
-    to: DateTime<FixedOffset>,
+    timestamps: Option<(DateTime<FixedOffset>, DateTime<FixedOffset>)>,
     path: P,
     dir: P,
 ) {
@@ -120,8 +119,17 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         CircularI2S::new(path, 2),
     ];
 
-    let from_nanos = from.timestamp_nanos_opt().unwrap();
-    let to_nanos = to.timestamp_nanos_opt().unwrap();
+    let (from_nanos, to_nanos) = if let Some(timestamps) = timestamps {
+        (
+            timestamps.0.timestamp_nanos_opt().unwrap(),
+            timestamps.1.timestamp_nanos_opt().unwrap(),
+        )
+    } else {
+        (0, 0)
+    };
+
+    //let from_nanos = from.timestamp_nanos_opt().unwrap();
+    //let to_nanos = to.timestamp_nanos_opt().unwrap();
 
     let (best_pps, mut _best_diff, waves) = find_best(dir.as_ref(), from_nanos);
 

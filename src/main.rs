@@ -9,10 +9,8 @@ mod umc;
 
 #[derive(Parser, Debug)]
 struct Args {
-    /// Start timestamp in format "%Y-%m-%d %H:%M:%S%.3f %z"
-    start_time: String,
-    /// End timestamp in the same format as start timestamp
-    end_time: String,
+    #[clap(flatten)]
+    time_or_csv: TimeOrCsv,
     /// Path to output file (without .wav extension - for i2s mode it's the base name for all output files)
     output: String,
     /// Path to input directory containing wav files with names being numbers of nanoseconds since unix epoch
@@ -20,26 +18,42 @@ struct Args {
     /// 'umc' or 'i2s'
     mode: String,
     #[arg(short, long)]
-    /// Path to directory containing csv files describing drone flights
-    csv_dir: Option<String>,
-    #[arg(short, long)]
     /// Path to file containing in each row a single timestamp (nanoseconds since unix epoch) of an
     /// alsa error
-    errors_file: Option<String>
+    errors_file: Option<String>,
+}
+
+#[derive(Debug, clap::Args)]
+#[group(required = true, multiple = false)]
+struct TimeOrCsv {
+    #[arg(short, long, value_delimiter = ' ', num_args = 2, value_name = "TIMESTAMP")]
+    /// Timestamps of start and end in the format "%Y-%m-%d %H:%M:%S%.3f %z" delimited by a
+    /// whitespace
+    timestamps: Option<Vec<String>>,
+    #[arg(short, long)]
+    /// Path to directory containing csv files describing drone flights
+    csv_file: Option<String>,
 }
 
 fn main() {
     let args = Args::parse();
-    let from = DateTime::parse_from_str(&args.start_time, "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
-    let to = DateTime::parse_from_str(&args.end_time, "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
+
+    let timestamps = if let Some(timestamps) = args.time_or_csv.timestamps {
+        let from = DateTime::parse_from_str(&timestamps[0], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
+        let to = DateTime::parse_from_str(&timestamps[1], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
+        Some((from, to))
+    } else {
+        None
+    };
+
     let output = args.output;
     let input_dir = args.input_dir;
 
     let mode = args.mode;
     if mode == "umc" {
-        umc::make_wav(from, to, output, input_dir);
+        umc::make_wav(timestamps, output, input_dir, args.time_or_csv.csv_file, args.errors_file);
     } else if mode == "i2s" {
-        i2s::make_wav(from, to, output, input_dir);
+        i2s::make_wav(timestamps, output, input_dir);
     } else {
         eprintln!("Specify either 'umc' or 'i2s' after input dir");
     }
