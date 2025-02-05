@@ -189,7 +189,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         time_counter = 20 - time_counter;
         let start = dt.timestamp_nanos_opt().unwrap() + 50_000_000 * time_counter;
         let end = start + (counter - 1) * 50_000_000;
-        println!("{start}");
         (start, end)
     } else {
         (0, 0)
@@ -212,7 +211,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     if let Some(Pps { nanos, sample, file }) = best_pps {
         let (start_file, start_sample) =
             find_start(from_nanos, nanos, sample, &file, &waves, channels, 48000.0);
-        println!("{} {start_sample}", start_file.to_str().unwrap());
 
         #[allow(clippy::cast_precision_loss)]
         #[allow(clippy::cast_possible_truncation)]
@@ -258,7 +256,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                     continue;
                 }
             };
-            println!("{} {}", wav.to_str().unwrap(), reader.duration());
+            //println!("{} {}", wav.to_str().unwrap(), reader.duration());
             if start {
                 reader.seek(start_sample / channels).unwrap();
                 start = false;
