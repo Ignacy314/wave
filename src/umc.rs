@@ -81,7 +81,6 @@ impl Cursor {
     }
 
     fn process_error(&mut self, curr: usize, waves: &[PathBuf]) -> Option<ProcessResult> {
-        println!("{}", waves[curr].to_str().unwrap());
         if self.index >= self.breaks.len() {
             return None;
         }
@@ -204,7 +203,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
     if let Some(Pps { nanos, sample, file }) = best_pps {
         let (start_file, start_sample) =
-            find_start(from_nanos, nanos, sample, &file, &waves, channels);
+            find_start(from_nanos, nanos, sample, &file, &waves, channels, 48000.0);
 
         #[allow(clippy::cast_precision_loss)]
         #[allow(clippy::cast_possible_truncation)]

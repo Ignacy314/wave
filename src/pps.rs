@@ -119,6 +119,7 @@ pub fn find_start(
     file: &PathBuf,
     waves: &[PathBuf],
     channels: u32,
+    freq: f64,
 ) -> (PathBuf, u32) {
     let mut nanos_diff = from_nanos - nanos;
     let mut backward = false;
@@ -132,7 +133,7 @@ pub fn find_start(
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_truncation)]
     #[allow(clippy::cast_sign_loss)]
-    let mut samples_diff = (nanos_diff as f64 / 1e9_f64 * 192_000.0).round() as u32;
+    let mut samples_diff = (nanos_diff as f64 / 1e9_f64 * freq).round() as u32;
     if backward {
         if sample >= samples_diff {
             start_sample = sample - samples_diff;
