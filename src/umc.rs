@@ -66,7 +66,6 @@ impl Cursor {
         self.writer.finalize().unwrap();
         let new_filename =
             format!("{}_{}-{}.wav", self.filename, self.current_start, self.drone_sample);
-        println!("{new_filename}");
         fs::rename(self.filename.clone(), new_filename).unwrap();
         if advance_by == u32::MAX {
             return None;
