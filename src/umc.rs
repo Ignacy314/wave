@@ -251,6 +251,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                                 continue;
                             }
                             cursor = cursor.finalize_writer(res.advance_samples_by).unwrap();
+                            samples_left -= res.advance_samples_by;
                         }
                         res.write_samples_from_curr -= 1;
                     }
