@@ -260,7 +260,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             };
             //println!("{} {}", wav.to_str().unwrap(), reader.duration());
             if start {
-                reader.seek(start_sample / channels).unwrap();
+                reader.seek(start_sample).unwrap();
                 start = false;
             }
             for s in reader.samples::<i32>() {
