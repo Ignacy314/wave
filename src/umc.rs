@@ -283,6 +283,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                             }
                             if pos_in_file < res.pos_in_end_file {
                                 pos_in_file += 1;
+                                cursor.advance_by(1);
                                 continue;
                             }
                             cursor = cursor.finalize_writer(res.advance_samples_by).unwrap();
