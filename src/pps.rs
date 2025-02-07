@@ -121,6 +121,7 @@ pub fn find_start(
     channels: u32,
     freq: f64,
 ) -> (PathBuf, u32) {
+    let sample = sample / channels;
     let mut nanos_diff = from_nanos - nanos;
     let mut backward = false;
     let mut start_sample = 0u32;
