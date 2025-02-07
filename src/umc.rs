@@ -112,9 +112,10 @@ impl Cursor {
             let nanos_pos_in_end_file = end - end_file_nanos;
             let pos_in_end_file = (nanos_pos_in_end_file * 48 / 1_000_000) as u32;
             println!(
-                "{} {} {} {} {} {}",
+                "{} {} {} {} {} {} {}",
                 start,
                 end,
+                curr_nanos,
                 write_nanos_from_curr,
                 end_file_nanos,
                 pos_in_end_file,
