@@ -212,6 +212,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     if let Some(Pps { nanos, sample, file }) = best_pps {
         let (start_file, start_sample) =
             find_start(from_nanos, nanos, sample, &file, &waves, channels, 48000.0);
+        println!("{} {start_sample}", start_file.to_str().unwrap());
 
         #[allow(clippy::cast_precision_loss)]
         #[allow(clippy::cast_possible_truncation)]
