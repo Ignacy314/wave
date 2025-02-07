@@ -121,7 +121,7 @@ pub fn find_start(
     channels: u32,
     freq: f64,
 ) -> (PathBuf, u32) {
-    let sample = sample / channels;
+    let sample = (sample - 1) / channels;
     let mut nanos_diff = from_nanos - nanos;
     let mut backward = false;
     let mut start_sample = 0u32;
@@ -148,7 +148,7 @@ pub fn find_start(
                         continue;
                     }
                 };
-                let wav_dur = reader.duration() / channels;
+                let wav_dur = reader.duration();
                 if samples_diff > wav_dur {
                     samples_diff -= wav_dur;
                 } else {
@@ -161,7 +161,7 @@ pub fn find_start(
         }
     } else {
         let reader = hound::WavReader::open(file.clone()).unwrap();
-        let wav_dur = reader.duration() / channels;
+        let wav_dur = reader.duration();
         if sample + samples_diff <= wav_dur {
             start_sample = sample + samples_diff;
             start_found = true;
@@ -174,7 +174,7 @@ pub fn find_start(
                         continue;
                     }
                 };
-                let wav_dur = reader.duration() / channels;
+                let wav_dur = reader.duration();
                 if samples_diff > wav_dur {
                     samples_diff -= wav_dur;
                 } else {
