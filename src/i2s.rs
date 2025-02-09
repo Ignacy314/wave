@@ -96,7 +96,6 @@ impl CircularI2S {
                     j += step;
                 }
 
-                #[allow(clippy::cast_possible_truncation)]
                 let sample = sample as i32;
                 self.files[i].write_sample(sample).unwrap();
             }
@@ -108,7 +107,6 @@ impl CircularI2S {
     }
 }
 
-#[allow(clippy::too_many_lines)]
 pub fn make_wav<P: std::convert::AsRef<Path>>(
     timestamps: Option<(DateTime<FixedOffset>, DateTime<FixedOffset>)>,
     path: P,
@@ -141,17 +139,11 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         let (start_file, start_sample) =
             find_start(from_nanos, nanos, sample, &file, &waves, channels, 192_000.0);
 
-        #[allow(clippy::cast_precision_loss)]
-        #[allow(clippy::cast_possible_truncation)]
-        #[allow(clippy::cast_sign_loss)]
         let mut samples_left =
             [((to_nanos - from_nanos) as f64 / 1e9_f64 * 48000.0).round() as u32; 2];
 
-        #[allow(clippy::cast_possible_truncation)]
         let n = samples_left[0] * samples_left.len() as u32;
         let pb = ProgressBar::new(u64::from(n));
-        #[allow(clippy::cast_possible_truncation)]
-        #[allow(clippy::cast_sign_loss)]
         let t = f64::from(n).log10().ceil() as u64;
         pb.set_style(
             ProgressStyle::with_template(&format!(
@@ -177,25 +169,20 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             for s in reader.samples::<i32>() {
                 let sample = s.unwrap();
                 if start {
-                    #[allow(clippy::cast_sign_loss)]
                     let mic = ((sample as u32 & 0b1000) >> 3) as usize;
-                    #[allow(clippy::cast_sign_loss)]
                     let inner_index = (sample as u32 & 0b111) as usize;
                     if mic != 0 || inner_index != 0 {
                         continue;
                     }
                     start = false;
                 }
-                #[allow(clippy::cast_possible_wrap)]
                 if skip > 0 {
                     skip -= 1;
                 } else if sample == 0xeeee_eeee_u32 as i32 {
                     skip += 3;
                 } else {
-                    #[allow(clippy::cast_sign_loss)]
                     let mic = ((sample as u32 & 0b1000) >> 3) as usize;
 
-                    #[allow(clippy::cast_sign_loss)]
                     let inner_index = (sample as u32 & 0b111) as usize;
 
                     if samples_left[mic] > 0 && bufs[mic].set_inner(sample, inner_index) {

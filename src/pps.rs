@@ -23,7 +23,6 @@ fn get_pps(f: &PathBuf) -> Vec<Pps> {
     let mut prev = 0i32;
     for (i, s) in reader.samples::<i32>().enumerate() {
         let sample = s.unwrap();
-        #[allow(clippy::cast_possible_wrap)]
         if sample == 0xeeee_eeee_u32 as i32 {
             pps = true;
         } else if pps {
@@ -31,7 +30,6 @@ fn get_pps(f: &PathBuf) -> Vec<Pps> {
                 pps = false;
                 first_read = false;
                 let nanos = unsafe { transmute::<[i32; 2], i64>([sample, prev]) };
-                #[allow(clippy::cast_possible_truncation)]
                 pps_vec.push(Pps {
                     nanos,
                     sample: (i - 2) as u32,
@@ -72,8 +70,6 @@ pub fn find_best(dir: &Path, from_nanos: i64) -> (Option<Pps>, i64, Vec<PathBuf>
 
     let n = waves.len() as u64;
     let pb = ProgressBar::new(n);
-    #[allow(clippy::cast_possible_truncation)]
-    #[allow(clippy::cast_sign_loss)]
     let t = f64::from(n as u32).log10().ceil() as u64;
     pb.set_style(
         ProgressStyle::with_template(&format!(
@@ -131,9 +127,6 @@ pub fn find_start(
         nanos_diff = -nanos_diff;
         backward = true;
     }
-    #[allow(clippy::cast_precision_loss)]
-    #[allow(clippy::cast_possible_truncation)]
-    #[allow(clippy::cast_sign_loss)]
     let mut samples_diff = (nanos_diff as f64 / 1e9_f64 * freq).round() as u32;
     if backward {
         if sample >= samples_diff {

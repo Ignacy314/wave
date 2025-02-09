@@ -1,6 +1,6 @@
 use std::fs::{self, File};
 use std::io::BufWriter;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use chrono::{DateTime, FixedOffset};
 use hound::WavSpec;
@@ -10,15 +10,23 @@ use crate::pps::{find_best, find_start, Pps};
 
 const AUDIO_PER_DRONE_SAMPLES: u32 = 2400;
 
+#[derive(Clone, Copy)]
+struct Break {
+    start: (i64, u32),
+    end: (i64, u32),
+    len: i64,
+}
+
 struct Cursor {
     audio_sample: u32,
     drone_sample: u32,
-    breaks: Vec<(i64, i64)>,
+    breaks: Vec<Break>,
     index: usize,
     spec: WavSpec,
-    writer: hound::WavWriter<BufWriter<File>>,
+    writer: Option<hound::WavWriter<BufWriter<File>>>,
     current_start: u32,
     filename: String,
+    current_break: Option<Break>,
 }
 
 fn wav_file_to_nanos(f: &Path) -> i64 {
@@ -29,8 +37,7 @@ fn wav_file_to_nanos(f: &Path) -> i64 {
 
 struct ProcessResult {
     write_samples_from_curr: u32,
-    advance_files: u32,
-    advance_samples_by: u32,
+    is_end_file: bool,
     pos_in_end_file: u32,
 }
 
@@ -43,14 +50,34 @@ impl Cursor {
             breaks: vec![],
             index: 0,
             spec,
-            writer,
+            writer: Some(writer),
             current_start: 1,
             filename,
+            current_break: None,
         }
     }
 
-    fn add_break(&mut self, start: i64, end: i64) {
-        self.breaks.push((start, end));
+    fn add_break(&mut self, b_start: i64, b_end: i64, dir: &Path) {
+        let (start_pps, _, start_waves) = find_best(dir, b_start);
+        if let Some(Pps { nanos, sample, file }) = start_pps {
+            let (start_file, start_sample) =
+                find_start(b_start, nanos, sample, &file, &start_waves, 2, 48000.0);
+
+            let (end_pps, _, end_waves) = find_best(dir, b_end);
+            if let Some(Pps { nanos, sample, file }) = end_pps {
+                let (end_file, end_sample) =
+                    find_start(b_end, nanos, sample, &file, &end_waves, 2, 48000.0);
+                self.breaks.push(Break {
+                    start: (wav_file_to_nanos(&start_file), start_sample),
+                    end: (wav_file_to_nanos(&end_file), end_sample),
+                    len: b_end - b_start,
+                });
+            } else {
+                panic!("Failed to find end point of a break");
+            }
+        } else {
+            panic!("Failed to find start point of a break");
+        }
     }
 
     fn advance_by(&mut self, samples: u32) {
@@ -62,70 +89,49 @@ impl Cursor {
     }
 
     fn write_sample(&mut self, sample: i32) {
-        self.writer.write_sample(sample).unwrap();
+        if let Some(writer) = self.writer.as_mut() {
+            writer.write_sample(sample).unwrap();
+        }
         self.advance_by(1);
     }
 
-    fn finalize_writer(mut self, advance_by: u32) -> Option<Self> {
-        self.writer.finalize().unwrap();
+    fn finalize_writer(&mut self, advance_by: u32) {
+        let writer = self.writer.take();
+        writer.unwrap().finalize().unwrap();
         let new_filename =
             format!("{}_{}-{}.wav", self.filename, self.current_start, self.drone_sample);
         fs::rename(self.filename.clone(), new_filename).unwrap();
         if advance_by == u32::MAX {
-            return None;
+            return;
         }
-        self.writer = hound::WavWriter::create(self.filename.clone(), self.spec).unwrap();
+        self.writer = Some(hound::WavWriter::create(self.filename.clone(), self.spec).unwrap());
         self.advance_by(advance_by);
         self.current_start = self.drone_sample;
-        Some(self)
     }
 
-    fn process_error(&mut self, curr: usize, waves: &[PathBuf]) -> Option<ProcessResult> {
+    fn process_error(&mut self, curr_file: &Path) -> Option<ProcessResult> {
+        let curr_nanos = wav_file_to_nanos(curr_file);
+        if let Some(br) = self.current_break {
+            if curr_nanos == br.end.0 {
+                return Some(ProcessResult {
+                    write_samples_from_curr: 0,
+                    is_end_file: true,
+                    pos_in_end_file: br.end.1,
+                });
+            }
+        }
         if self.index >= self.breaks.len() {
             return None;
         }
-        let (start, end) = self.breaks[self.index];
-        if waves.len() - 1 == curr {
-            return None;
-        }
-        #[allow(clippy::cast_possible_truncation)]
-        #[allow(clippy::cast_sign_loss)]
-        if wav_file_to_nanos(&waves[curr + 1]) > start {
+        let br = self.breaks[self.index];
+
+        if curr_nanos == br.start.0 {
             self.index += 1;
-            let curr_nanos = wav_file_to_nanos(&waves[curr]);
-            let write_nanos_from_curr = start - curr_nanos;
-            let write_samples_from_curr = (write_nanos_from_curr * 48 / 1_000_000) as u32;
-
-            let advance_samples_by = ((end - start) * 48 / 1_000_000) as u32;
-
-            let mut i = 0;
-            let mut end_file_nanos = curr_nanos;
-            let mut next_file_nanos = wav_file_to_nanos(&waves[curr + 1]);
-            while next_file_nanos <= end {
-                i += 1;
-                if curr + i + 1 == waves.len() {
-                    return None;
-                }
-                end_file_nanos = next_file_nanos;
-                next_file_nanos = wav_file_to_nanos(&waves[curr + i + 1]);
-            }
-            let nanos_pos_in_end_file = end - end_file_nanos;
-            let pos_in_end_file = (nanos_pos_in_end_file * 48 / 1_000_000) as u32;
-            println!(
-                "{} {} {} {} {} {} {}",
-                start,
-                end,
-                curr_nanos,
-                write_nanos_from_curr,
-                end_file_nanos,
-                pos_in_end_file,
-                self.drone_sample
-            );
+            self.current_break = Some(br);
             return Some(ProcessResult {
-                write_samples_from_curr,
-                advance_files: i as u32,
-                advance_samples_by,
-                pos_in_end_file,
+                write_samples_from_curr: br.start.1,
+                is_end_file: br.end.0 == curr_nanos,
+                pos_in_end_file: br.end.1,
             });
         }
         None
@@ -148,7 +154,6 @@ struct ErrorTime {
     end: i64,
 }
 
-#[allow(clippy::too_many_lines)]
 pub fn make_wav<P: std::convert::AsRef<Path>>(
     timestamps: Option<(DateTime<FixedOffset>, DateTime<FixedOffset>)>,
     output: P,
@@ -175,7 +180,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         let mut counter = 0;
         let mut time_counter = 0i64;
         let mut rfc = String::new();
-        #[allow(clippy::explicit_counter_loop)]
         for result in rdr.deserialize() {
             counter += 1;
             let record: Record = result.unwrap();
@@ -199,7 +203,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         let mut rdr = csv::Reader::from_path(errors).unwrap();
         for res in rdr.deserialize() {
             let record: ErrorTime = res.unwrap();
-            cursor.add_break(record.start, record.end);
+            cursor.add_break(record.start, record.end, input_dir.as_ref());
         }
     }
 
@@ -212,16 +216,11 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     if let Some(Pps { nanos, sample, file }) = best_pps {
         let (start_file, start_sample) =
             find_start(from_nanos, nanos, sample, &file, &waves, channels, 48000.0);
-        println!("{} {start_sample}", start_file.to_str().unwrap());
+        //println!("{} {start_sample}", start_file.to_str().unwrap());
 
-        #[allow(clippy::cast_precision_loss)]
-        #[allow(clippy::cast_possible_truncation)]
-        #[allow(clippy::cast_sign_loss)]
         let mut samples_left = ((to_nanos - from_nanos) as f64 / 1e9_f64 * 48000.0).round() as u32;
 
         let pb = ProgressBar::new(u64::from(samples_left));
-        #[allow(clippy::cast_possible_truncation)]
-        #[allow(clippy::cast_sign_loss)]
         let t = f64::from(samples_left).log10().ceil() as u64;
         pb.set_style(
             ProgressStyle::with_template(&format!(
@@ -235,22 +234,14 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         let mut skip = 0;
         let mut end = false;
         let mut pps;
-        let mut pos_in_file;
-        let mut process_res: Option<ProcessResult> = None;
-        for (i, wav) in waves
-            .iter()
-            .enumerate()
-            .skip_while(|(_i, x)| **x != start_file)
-        {
-            if let Some(res) = process_res.as_mut() {
-                if res.advance_files > 0 {
-                    res.advance_files -= 1;
+        for wav in waves.iter().skip_while(|x| **x != start_file) {
+            let process_res = cursor.process_error(wav);
+            if let Some(res) = process_res.as_ref() {
+                if res.write_samples_from_curr == 0 && !res.is_end_file {
                     continue;
                 }
-            } else {
-                process_res = cursor.process_error(i, &waves);
             }
-            pos_in_file = 1u32;
+            let mut pos_in_file = 1u32;
             pps = false;
             let mut reader = match hound::WavReader::open(wav) {
                 Ok(r) => r,
@@ -258,14 +249,12 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                     continue;
                 }
             };
-            //println!("{} {}", wav.to_str().unwrap(), reader.duration());
             if start {
                 reader.seek(start_sample).unwrap();
                 start = false;
             }
             for s in reader.samples::<i32>() {
                 let sample = s.unwrap();
-                #[allow(clippy::cast_possible_wrap)]
                 if sample == 0xeeee_eeee_u32 as i32 {
                     if pps {
                         pps = false;
@@ -276,25 +265,24 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                 } else if skip > 0 {
                     skip -= 1;
                 } else {
-                    if let Some(res) = process_res.as_mut() {
-                        if res.write_samples_from_curr == 0 {
-                            if res.advance_files != 0 {
-                                break;
-                            }
-                            if pos_in_file < res.pos_in_end_file {
-                                pos_in_file += 1;
+                    if let Some(res) = process_res.as_ref() {
+                        if pos_in_file < res.write_samples_from_curr {
+                        } else if res.is_end_file {
+                            if pos_in_file > res.pos_in_end_file {
+                                cursor.finalize_writer(
+                                    (cursor.current_break.unwrap().len * 48 / 1_000_000) as u32,
+                                );
+                                cursor.current_break = None;
+                            } else {
                                 continue;
                             }
-                            cursor = cursor.finalize_writer(res.advance_samples_by).unwrap();
-                            samples_left -= res.advance_samples_by;
-                            process_res = None;
                         } else {
-                            res.write_samples_from_curr -= 1;
+                            break;
                         }
                     }
-                    pos_in_file += 1;
-                    skip += 1;
                     cursor.write_sample(sample);
+                    skip += 1;
+                    pos_in_file += 1;
                     samples_left -= 1;
                     pb.inc(1);
                     if samples_left == 0 {
