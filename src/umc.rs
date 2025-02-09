@@ -282,6 +282,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                                 let adv_samples =
                                     (cursor.current_break.unwrap().len * 48 / 1_000_000) as u32;
                                 samples_left -= adv_samples;
+                                println!("{}", cursor.samples_written);
                                 cursor.finalize_writer(adv_samples);
                                 cursor.current_break = None;
                                 process_res = None;
