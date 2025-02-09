@@ -242,7 +242,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         let mut end = false;
         let mut pps;
         for wav in waves.iter().skip_while(|x| **x != start_file) {
-            let process_res = cursor.process_error(wav);
+            let mut process_res = cursor.process_error(wav);
             if let Some(res) = process_res.as_ref() {
                 if res.write_samples_from_curr == 0 && !res.is_end_file {
                     continue;
@@ -272,7 +272,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                 } else if skip > 0 {
                     skip -= 1;
                 } else {
-                    if let Some(res) = process_res.as_ref() {
+                    if let Some(res) = process_res.as_mut() {
                         if pos_in_file < res.write_samples_from_curr {
                         } else if res.is_end_file {
                             if pos_in_file > res.pos_in_end_file {
@@ -281,6 +281,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                                     (cursor.current_break.unwrap().len * 48 / 1_000_000) as u32,
                                 );
                                 cursor.current_break = None;
+                                process_res = None;
                             } else {
                                 pos_in_file += 1;
                                 continue;
