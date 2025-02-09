@@ -272,10 +272,10 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                     skip -= 1;
                 } else {
                     if let Some(res) = process_res.as_mut() {
-                        if pos_in_file > res.write_samples_from_curr * 2 {
+                        if pos_in_file > res.write_samples_from_curr / 2{
                             if !res.is_end_file {
                                 break;
-                            } else if pos_in_file > res.pos_in_end_file * 2 {
+                            } else if pos_in_file > res.pos_in_end_file / 2 {
                                 //println!("{}: {:?}", wav_file_to_nanos(wav), cursor.current_break);
                                 println!("{samples_left}");
                                 cursor.finalize_writer(
