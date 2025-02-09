@@ -74,7 +74,6 @@ impl Cursor {
                     end: (wav_file_to_nanos(&end_file), end_sample),
                     len: b_end - b_start,
                 };
-                println!("{br:?}");
                 self.breaks.push(br);
             } else {
                 panic!("Failed to find end point of a break");
@@ -129,10 +128,8 @@ impl Cursor {
         let br = self.breaks[self.index];
 
         if curr_nanos == br.start.0 {
-            println!("{}", self.samples_written);
             self.index += 1;
             self.current_break = Some(br);
-            //println!("{curr_nanos}: {br:?}");
             return Some(ProcessResult {
                 write_samples_from_curr: br.start.1,
                 is_end_file: br.end.0 == curr_nanos,
@@ -204,8 +201,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         (0, 0)
     };
 
-    println!("{to_nanos}");
-
     if let Some(errors) = errors {
         let mut rdr = csv::Reader::from_path(errors).unwrap();
         for res in rdr.deserialize() {
@@ -223,7 +218,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     if let Some(Pps { nanos, sample, file }) = best_pps {
         let (start_file, start_sample) =
             find_start(from_nanos, nanos, sample, &file, &waves, channels, 48000.0);
-        //println!("{} {start_sample}", start_file.to_str().unwrap());
 
         let mut samples_left = ((to_nanos - from_nanos) as f64 / 1e9_f64 * 48000.0).round() as u32;
 
@@ -274,15 +268,13 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                     skip -= 1;
                 } else {
                     if let Some(res) = process_res.as_mut() {
-                        if pos_in_file > res.write_samples_from_curr / 2 {
+                        if pos_in_file > res.write_samples_from_curr {
                             if !res.is_end_file {
                                 break;
-                            } else if pos_in_file > res.pos_in_end_file / 2 {
-                                //println!("{}: {:?}", wav_file_to_nanos(wav), cursor.current_break);
+                            } else if pos_in_file > res.pos_in_end_file {
                                 let adv_samples =
                                     (cursor.current_break.unwrap().len * 48 / 1_000_000) as u32;
                                 samples_left -= adv_samples;
-                                println!("{}", cursor.samples_written);
                                 cursor.finalize_writer(adv_samples);
                                 cursor.current_break = None;
                                 process_res = None;
