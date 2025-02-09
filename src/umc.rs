@@ -20,7 +20,7 @@ struct Break {
 struct Cursor {
     audio_sample: u32,
     drone_sample: u32,
-    breaks: Vec<Break>,
+    pub breaks: Vec<Break>,
     index: usize,
     spec: WavSpec,
     writer: Option<hound::WavWriter<BufWriter<File>>>,
@@ -224,6 +224,8 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         let (start_file, start_sample) =
             find_start(from_nanos, nanos, sample, &file, &waves, channels, 48000.0);
         //println!("{} {start_sample}", start_file.to_str().unwrap());
+
+        println!("{}", cursor.breaks[0].start.0 - from_nanos);
 
         let mut samples_left = ((to_nanos - from_nanos) as f64 / 1e9_f64 * 48000.0).round() as u32;
 
