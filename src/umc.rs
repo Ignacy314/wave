@@ -10,7 +10,7 @@ use crate::pps::{find_best, find_start, Pps};
 
 const AUDIO_PER_DRONE_SAMPLES: u32 = 2400;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct Break {
     start: (i64, u32),
     end: (i64, u32),
@@ -67,6 +67,12 @@ impl Cursor {
             if let Some(Pps { nanos, sample, file }) = end_pps {
                 let (end_file, end_sample) =
                     find_start(b_end, nanos, sample, &file, &end_waves, 2, 48000.0);
+                let br = Break {
+                    start: (wav_file_to_nanos(&start_file), start_sample),
+                    end: (wav_file_to_nanos(&end_file), end_sample),
+                    len: b_end - b_start,
+                };
+                println!("{br:?}");
                 self.breaks.push(Break {
                     start: (wav_file_to_nanos(&start_file), start_sample),
                     end: (wav_file_to_nanos(&end_file), end_sample),
