@@ -73,11 +73,7 @@ impl Cursor {
                     len: b_end - b_start,
                 };
                 println!("{br:?}");
-                self.breaks.push(Break {
-                    start: (wav_file_to_nanos(&start_file), start_sample),
-                    end: (wav_file_to_nanos(&end_file), end_sample),
-                    len: b_end - b_start,
-                });
+                self.breaks.push(br);
             } else {
                 panic!("Failed to find end point of a break");
             }
@@ -260,6 +256,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             };
             if start {
                 reader.seek(start_sample).unwrap();
+                pos_in_file = start_sample;
                 start = false;
             }
             for s in reader.samples::<i32>() {
@@ -275,15 +272,14 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                     skip -= 1;
                 } else {
                     if let Some(res) = process_res.as_mut() {
-                        if pos_in_file > res.write_samples_from_curr {
+                        if pos_in_file > res.write_samples_from_curr * 2 {
                             if !res.is_end_file {
                                 break;
-                            } else if pos_in_file > res.pos_in_end_file {
+                            } else if pos_in_file > res.pos_in_end_file * 2 {
                                 //println!("{}: {:?}", wav_file_to_nanos(wav), cursor.current_break);
                                 println!("{samples_left}");
                                 cursor.finalize_writer(
-                                    0
-                                    //(cursor.current_break.unwrap().len * 48 / 1_000_000) as u32,
+                                    (cursor.current_break.unwrap().len * 48 / 1_000_000) as u32,
                                 );
                                 cursor.current_break = None;
                                 process_res = None;
