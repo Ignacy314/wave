@@ -27,6 +27,7 @@ struct Cursor {
     current_start: u32,
     filename: String,
     current_break: Option<Break>,
+    samples_written: u32,
 }
 
 fn wav_file_to_nanos(f: &Path) -> i64 {
@@ -54,6 +55,7 @@ impl Cursor {
             current_start: 1,
             filename,
             current_break: None,
+            samples_written: 0,
         }
     }
 
@@ -95,6 +97,7 @@ impl Cursor {
             writer.write_sample(sample).unwrap();
         }
         self.advance_by(1);
+        self.samples_written += 1;
     }
 
     fn finalize_writer(&mut self, advance_by: u32) {
@@ -221,8 +224,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             find_start(from_nanos, nanos, sample, &file, &waves, channels, 48000.0);
         //println!("{} {start_sample}", start_file.to_str().unwrap());
 
-        println!("{}", cursor.breaks[0].start.0 - from_nanos);
-
         let mut samples_left = ((to_nanos - from_nanos) as f64 / 1e9_f64 * 48000.0).round() as u32;
 
         let pb = ProgressBar::new(u64::from(samples_left));
@@ -280,7 +281,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                                 let adv_samples =
                                     (cursor.current_break.unwrap().len * 48 / 1_000_000) as u32;
                                 samples_left -= adv_samples;
-                                println!("{samples_left}");
+                                println!("{}", cursor.samples_written);
                                 cursor.finalize_writer(adv_samples);
                                 cursor.current_break = None;
                                 process_res = None;
