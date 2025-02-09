@@ -134,6 +134,7 @@ impl Cursor {
         if curr_nanos == br.start.0 {
             self.index += 1;
             self.current_break = Some(br);
+            println!("{curr_nanos}: {br:?}");
             return Some(ProcessResult {
                 write_samples_from_curr: br.start.1,
                 is_end_file: br.end.0 == curr_nanos,
@@ -275,6 +276,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                         if pos_in_file < res.write_samples_from_curr {
                         } else if res.is_end_file {
                             if pos_in_file > res.pos_in_end_file {
+                                println!("{}: {:?}", wav_file_to_nanos(wav), cursor.current_break);
                                 cursor.finalize_writer(
                                     (cursor.current_break.unwrap().len * 48 / 1_000_000) as u32,
                                 );
