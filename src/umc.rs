@@ -204,6 +204,8 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         (0, 0)
     };
 
+    println!("{to_nanos}");
+
     if let Some(errors) = errors {
         let mut rdr = csv::Reader::from_path(errors).unwrap();
         for res in rdr.deserialize() {
@@ -245,7 +247,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                 if res.write_samples_from_curr == 0 && !res.is_end_file {
                     continue;
                 }
-            } else {
             }
             let mut pos_in_file = 1u32;
             pps = false;
