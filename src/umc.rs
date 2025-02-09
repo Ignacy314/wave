@@ -282,7 +282,8 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                                 //println!("{}: {:?}", wav_file_to_nanos(wav), cursor.current_break);
                                 println!("{samples_left}");
                                 cursor.finalize_writer(
-                                    (cursor.current_break.unwrap().len * 48 / 1_000_000) as u32,
+                                    0
+                                    //(cursor.current_break.unwrap().len * 48 / 1_000_000) as u32,
                                 );
                                 cursor.current_break = None;
                                 process_res = None;
