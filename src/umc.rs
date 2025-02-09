@@ -280,6 +280,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                                 );
                                 cursor.current_break = None;
                             } else {
+                                pos_in_file += 1;
                                 continue;
                             }
                         } else {
