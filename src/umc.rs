@@ -117,13 +117,11 @@ impl Cursor {
     fn process_error(&mut self, curr_file: &Path) -> Option<ProcessResult> {
         let curr_nanos = wav_file_to_nanos(curr_file);
         if let Some(br) = self.current_break {
-            if curr_nanos == br.end.0 {
-                return Some(ProcessResult {
-                    write_samples_from_curr: 0,
-                    is_end_file: true,
-                    pos_in_end_file: br.end.1,
-                });
-            }
+            return Some(ProcessResult {
+                write_samples_from_curr: 0,
+                is_end_file: curr_nanos == br.end.0,
+                pos_in_end_file: br.end.1,
+            });
         }
         if self.index >= self.breaks.len() {
             return None;
@@ -247,6 +245,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                 if res.write_samples_from_curr == 0 && !res.is_end_file {
                     continue;
                 }
+            } else {
             }
             let mut pos_in_file = 1u32;
             pps = false;
