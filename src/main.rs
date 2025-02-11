@@ -39,8 +39,10 @@ fn main() {
     let args = Args::parse();
 
     let timestamps = if let Some(timestamps) = args.time_or_csv.timestamps {
-        let from = DateTime::parse_from_str(&timestamps[0], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
-        let to = DateTime::parse_from_str(&timestamps[1], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
+        //let from = DateTime::parse_from_str(&timestamps[0], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
+        //let to = DateTime::parse_from_str(&timestamps[1], "%Y-%m-%d %H:%M:%S%.3f %z").unwrap();
+        let from = DateTime::parse_from_rfc3339(&timestamps[0]).unwrap();
+        let to = DateTime::parse_from_rfc3339(&timestamps[1]).unwrap();
         Some((from, to))
     } else {
         None
