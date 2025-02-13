@@ -10,7 +10,24 @@ pub fn concat<P: std::convert::AsRef<Path>>(input_dir: P, output: P) {
     let file = hound::WavReader::open(&waves[0]).unwrap();
     let spec = file.spec();
 
-    let mut writer = hound::WavWriter::create(output, spec).unwrap();
+    let nanos = &waves[0]
+        .file_stem()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .parse::<i64>()
+        .unwrap();
+
+    let start = chrono::DateTime::from_timestamp_nanos(*nanos);
+
+    let output_stem = output.as_ref().file_stem().unwrap().to_str().unwrap();
+    let output_ext = output.as_ref().extension().unwrap().to_str().unwrap();
+
+    let mut writer = hound::WavWriter::create(
+        format!("{output_stem}_{}.{output_ext}", start.to_rfc3339()),
+        spec,
+    )
+    .unwrap();
 
     for wav in waves.iter() {
         let mut reader = match hound::WavReader::open(wav) {

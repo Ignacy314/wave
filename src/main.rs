@@ -5,10 +5,10 @@ use chrono::DateTime;
 
 use self::concat::concat;
 
+mod concat;
 mod i2s;
 mod pps;
 mod umc;
-mod concat;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -22,6 +22,7 @@ struct Cli {
 enum Commands {
     /// Concatenates all wav files in a folder
     Concat(ConcatArgs),
+    /// Concat and optionally cut waves while removing PPS
     Cut(Args),
 }
 
@@ -64,8 +65,7 @@ struct TimeOrCsv {
         num_args = 2,
         value_name = "TIMESTAMP"
     )]
-    /// Timestamps of start and end in the format "%Y-%m-%d %H:%M:%S%.3f %z" delimited by a
-    /// whitespace
+    /// Timestamps of start and end in the rfc3339 format delimited by a whitespace
     timestamps: Option<Vec<String>>,
     #[arg(short, long)]
     /// Path to directory containing csv files describing drone flights
@@ -109,6 +109,6 @@ fn main() {
         }
         Commands::Concat(args) => {
             concat(args.input_dir, args.output);
-        },
+        }
     }
 }
