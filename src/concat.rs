@@ -20,11 +20,12 @@ pub fn concat<P: std::convert::AsRef<Path>>(input_dir: P, output: P) {
 
     let start = chrono::DateTime::from_timestamp_nanos(*nanos);
 
+    let output_path = output.as_ref().parent().unwrap().to_str().unwrap();
     let output_stem = output.as_ref().file_stem().unwrap().to_str().unwrap();
     let output_ext = output.as_ref().extension().unwrap().to_str().unwrap();
 
     let mut writer = hound::WavWriter::create(
-        format!("{output_stem}_{}.{output_ext}", start.to_rfc3339()),
+        format!("{output_path}/{output_stem}_{}.{output_ext}", start.to_rfc3339()),
         spec,
     )
     .unwrap();
