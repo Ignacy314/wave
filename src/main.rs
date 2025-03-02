@@ -97,6 +97,7 @@ fn main() {
         if !write_until_finish && samples == 0 {
             if write {
                 samples = time_diff_to_samples(next_split.start, next_split.stop);
+                println!("skip: {samples}");
                 write = false;
                 writer.unwrap().finalize().unwrap();
                 writer = None;
@@ -106,8 +107,10 @@ fn main() {
                     next_split = next;
                     println!("{next_split:?}");
                     samples = time_diff_to_samples(start, next_split.start);
+                    println!("write: {samples}");
                 } else {
                     write_until_finish = true;
+                    println!("write to end");
                 }
                 write = true;
                 i += 1;
