@@ -18,7 +18,7 @@ struct Args {
     input: String,
     /// Path to csv with split timestamps
     #[arg(short, long)]
-    csv: String,
+    csv: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -55,27 +55,39 @@ fn main() {
 
     let mut reader = hound::WavReader::open(args.input).unwrap();
 
-    let mut csv = csv::Reader::from_path(args.csv).unwrap();
-    let records = csv.deserialize();
+    let mut csv = args.csv.map(|csv| csv::Reader::from_path(csv).unwrap());
+    let records = csv.as_mut().map(|csv| csv.deserialize());
 
     let mut splits = Vec::new();
-    for record in records {
-        let split_record: SplitRecord = record.unwrap();
-        let split = Split {
-            start: DateTime::parse_from_rfc3339(&split_record.start).unwrap(),
-            stop: DateTime::parse_from_rfc3339(&split_record.stop).unwrap(),
-        };
-        splits.push(split);
+    if let Some(records) = records {
+        for record in records {
+            let split_record: SplitRecord = record.unwrap();
+            let split = Split {
+                start: DateTime::parse_from_rfc3339(&split_record.start).unwrap(),
+                stop: DateTime::parse_from_rfc3339(&split_record.stop).unwrap(),
+            };
+            splits.push(split);
+        }
     }
 
     let mut splits_iter = splits.iter();
-    let mut next_split = splits_iter.next().unwrap();
+    let mut next_split = splits_iter.next();
 
-    let mut write = start < next_split.start;
-    let mut samples = if write {
-        time_diff_to_samples(start, next_split.start)
+    let mut write = if let Some(next_split) = next_split {
+        start < next_split.start
     } else {
-        time_diff_to_samples(next_split.start, next_split.stop)
+        true
+    };
+    let mut write_until_finish = false;
+    let mut samples = if write {
+        if let Some(next_split) = next_split {
+            time_diff_to_samples(start, next_split.start)
+        } else {
+            write_until_finish = true;
+            0
+        }
+    } else {
+        time_diff_to_samples(next_split.unwrap().start, next_split.unwrap().stop)
     };
 
     let spec = hound::WavSpec {
@@ -86,7 +98,6 @@ fn main() {
     };
 
     let mut i = 0;
-    let mut write_until_finish = false;
 
     let mut writer =
         Some(hound::WavWriter::create(format!("{}_{i}.wav", args.output), spec).unwrap());
@@ -96,17 +107,17 @@ fn main() {
 
         if !write_until_finish && samples == 0 {
             if write {
-                samples = time_diff_to_samples(next_split.start, next_split.stop);
+                samples = time_diff_to_samples(next_split.unwrap().start, next_split.unwrap().stop);
                 println!("skip: {samples}");
                 write = false;
                 writer.unwrap().finalize().unwrap();
                 writer = None;
             } else {
-                let start = next_split.stop;
+                let start = next_split.unwrap().stop;
                 if let Some(next) = splits_iter.next() {
-                    next_split = next;
+                    next_split = Some(next);
                     println!("{next_split:?}");
-                    samples = time_diff_to_samples(start, next_split.start);
+                    samples = time_diff_to_samples(start, next_split.unwrap().start);
                     println!("write: {samples}");
                 } else {
                     write_until_finish = true;
