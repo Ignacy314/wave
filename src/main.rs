@@ -54,8 +54,6 @@ fn main() {
 
     let mut reader = hound::WavReader::open(args.input).unwrap();
 
-    println!("{}", reader.duration());
-
     let mut csv = csv::Reader::from_path(args.csv).unwrap();
     let records = csv.deserialize();
 
@@ -100,7 +98,9 @@ fn main() {
                 samples = time_diff_to_samples(next_split.start, next_split.stop);
                 write = false;
                 writer.unwrap().finalize().unwrap();
-                writer = None;
+                writer = Some(
+                    hound::WavWriter::create(format!("{}_{i}_bg.wav", args.output), spec).unwrap(),
+                );
             } else {
                 let start = next_split.stop;
                 if let Some(next) = splits_iter.next() {
@@ -117,10 +117,8 @@ fn main() {
             }
         }
 
-        if write {
-            if let Some(writer) = writer.as_mut() {
-                writer.write_sample(s).unwrap();
-            }
+        if let Some(writer) = writer.as_mut() {
+            writer.write_sample(s).unwrap();
         }
         samples -= 1;
     }
