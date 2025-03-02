@@ -68,8 +68,6 @@ fn main() {
         splits.push(split);
     }
 
-    println!("{splits:?}");
-
     let mut splits_iter = splits.iter();
     let mut next_split = splits_iter.next().unwrap();
 
@@ -106,6 +104,7 @@ fn main() {
                 let start = next_split.stop;
                 if let Some(next) = splits_iter.next() {
                     next_split = next;
+                    println!("{next_split:?}");
                     samples = time_diff_to_samples(start, next_split.start);
                 } else {
                     write_until_finish = true;
