@@ -54,7 +54,7 @@ fn main() {
 
     let mut reader = hound::WavReader::open(args.input).unwrap();
 
-    println!("{:?}", reader.spec());
+    println!("{}", reader.duration());
 
     let mut csv = csv::Reader::from_path(args.csv).unwrap();
     let records = csv.deserialize();
