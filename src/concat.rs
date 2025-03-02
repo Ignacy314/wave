@@ -1,6 +1,6 @@
 use std::path::Path;
 
-pub fn concat<P: std::convert::AsRef<Path>>(input_dir: P, output: P) {
+pub fn concat<P: std::convert::AsRef<Path>>(input_dir: P, output: P, step: usize) {
     let mut waves = std::fs::read_dir(input_dir.as_ref())
         .unwrap()
         .flat_map(|f| f.map(|e| e.path()))
@@ -38,7 +38,7 @@ pub fn concat<P: std::convert::AsRef<Path>>(input_dir: P, output: P) {
             }
         };
 
-        reader.samples::<i32>().for_each(|s| {
+        reader.samples::<i32>().step_by(step).for_each(|s| {
             writer.write_sample(s.unwrap()).unwrap();
         });
     }
