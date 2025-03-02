@@ -7,8 +7,12 @@ pub fn concat<P: std::convert::AsRef<Path>>(input_dir: P, output: P, step: usize
         .collect::<Vec<_>>();
     waves.sort_unstable();
 
-    let file = hound::WavReader::open(&waves[0]).unwrap();
-    let spec = file.spec();
+    let spec = hound::WavSpec {
+        channels: 1,
+        sample_rate: 48000,
+        bits_per_sample: 32,
+        sample_format: hound::SampleFormat::Int,
+    };
 
     let nanos = &waves[0]
         .file_stem()
