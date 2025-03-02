@@ -27,6 +27,7 @@ struct SplitRecord {
     stop: String,
 }
 
+#[derive(Debug)]
 struct Split {
     start: DateTime<FixedOffset>,
     stop: DateTime<FixedOffset>,
@@ -67,6 +68,8 @@ fn main() {
         splits.push(split);
     }
 
+    println!("{splits:?}");
+
     let mut splits_iter = splits.iter();
     let mut next_split = splits_iter.next().unwrap();
 
@@ -98,9 +101,7 @@ fn main() {
                 samples = time_diff_to_samples(next_split.start, next_split.stop);
                 write = false;
                 writer.unwrap().finalize().unwrap();
-                writer = Some(
-                    hound::WavWriter::create(format!("{}_{i}_bg.wav", args.output), spec).unwrap(),
-                );
+                writer = None;
             } else {
                 let start = next_split.stop;
                 if let Some(next) = splits_iter.next() {
@@ -117,8 +118,10 @@ fn main() {
             }
         }
 
-        if let Some(writer) = writer.as_mut() {
-            writer.write_sample(s).unwrap();
+        if write {
+            if let Some(writer) = writer.as_mut() {
+                writer.write_sample(s).unwrap();
+            }
         }
         samples -= 1;
     }
