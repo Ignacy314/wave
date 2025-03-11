@@ -2,30 +2,30 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
 
+use circular_buffer::CircularBuffer;
 use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::Record;
 
 //const CHANNELS: u32 = 4;
 const FREQ: f64 = 192000.0;
+const BUF_SIZE: usize = 33;
+const BUF_SIZE_INNER: usize = 8;
+const MID: usize = BUF_SIZE_INNER / 2;
 
 struct CircularI2S {
     _size: usize,
     _inner_size: usize,
-    buf: Vec<[i32; Self::BUF_SIZE_INNER]>,
-    index: usize,
+    buf: CircularBuffer<BUF_SIZE, [i32; BUF_SIZE_INNER]>,
+    new_row: [i32; BUF_SIZE_INNER],
+    //index: usize,
     inner_index: usize,
-    filled: bool,
-    files: [hound::WavWriter<BufWriter<File>>; Self::BUF_SIZE_INNER + 1],
+    files: [hound::WavWriter<BufWriter<File>>; BUF_SIZE_INNER + 1],
 }
 
 impl CircularI2S {
-    const BUF_SIZE: usize = 33;
-    const BUF_SIZE_INNER: usize = 8;
-    const MID: usize = Self::BUF_SIZE_INNER / 2;
-
     fn new<P: std::convert::AsRef<Path>>(path: P, num: u8) -> Self {
-        let paths: [String; Self::BUF_SIZE_INNER + 1] = (0..=Self::BUF_SIZE_INNER)
+        let paths: [String; BUF_SIZE_INNER + 1] = (0..=BUF_SIZE_INNER)
             .map(|i| format!("{}_{num}_{i}.wav", path.as_ref().display()))
             .collect::<Vec<_>>()
             .try_into()
@@ -36,7 +36,7 @@ impl CircularI2S {
             bits_per_sample: 32,
             sample_format: hound::SampleFormat::Int,
         };
-        let files: [hound::WavWriter<BufWriter<File>>; Self::BUF_SIZE_INNER + 1] = paths
+        let files: [hound::WavWriter<BufWriter<File>>; BUF_SIZE_INNER + 1] = paths
             .into_iter()
             .map(|p| hound::WavWriter::create(p, spec).unwrap())
             .collect::<Vec<_>>()
@@ -45,26 +45,26 @@ impl CircularI2S {
                 panic!("Failed to create hound::WavWriter array (probably wrong path)")
             });
         Self {
-            _size: Self::BUF_SIZE,
-            _inner_size: Self::BUF_SIZE_INNER,
-            buf: vec![[0i32; Self::BUF_SIZE_INNER]; Self::BUF_SIZE],
-            index: 0,
+            _size: BUF_SIZE,
+            _inner_size: BUF_SIZE_INNER,
+            buf: CircularBuffer::new(),
+            new_row: [0; BUF_SIZE_INNER],
+            //index: 0,
             inner_index: 0,
-            filled: false,
             files,
         }
     }
 
     fn increment_index(&mut self) -> bool {
-        let row_full = self.inner_index == Self::BUF_SIZE_INNER - 1;
+        let row_full = self.inner_index == BUF_SIZE_INNER - 1;
         if row_full {
+            self.buf.push_back(self.new_row);
             self.inner_index = 0;
-            if self.index == Self::BUF_SIZE - 1 {
-                self.filled = true;
-                self.index = 0;
-            } else {
-                self.index += 1;
-            }
+            //if self.index == BUF_SIZE - 1 {
+            //    self.index = 0;
+            //} else {
+            //    self.index += 1;
+            //}
         } else {
             self.inner_index += 1;
         }
@@ -72,7 +72,7 @@ impl CircularI2S {
     }
 
     fn set_inner(&mut self, value: i32, index: usize) -> bool {
-        self.buf[self.index][index] = value;
+        self.new_row[index] = value;
         self.increment_index()
     }
 
@@ -81,20 +81,20 @@ impl CircularI2S {
     //    self.increment_index()
     //}
 
-    fn get(&self, i: usize, j: usize) -> i32 {
-        self.buf[i][j]
-    }
+    //fn get(&self, i: usize, j: usize) -> i32 {
+    //    self.buf[i][j]
+    //}
 
     fn compute_samples(&mut self) {
-        if self.filled {
-            for i in 0..=Self::BUF_SIZE_INNER {
-                let mut j = Self::MID * i;
-                let step = Self::MID - i;
+        if self.buf.is_full() {
+            for i in 0..=BUF_SIZE_INNER {
+                let mut j = MID * i;
+                let step = MID - i;
 
                 let mut sample = 0f64;
 
                 for k in 0..8 {
-                    sample += f64::from(self.get(j, k)) / 8.0;
+                    sample += f64::from(self.buf[j][k]) / 8.0;
                     j += step;
                 }
 
@@ -230,7 +230,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             if start {
                 let mic = ((sample as u32 & 0b1000) >> 3) as usize;
                 let inner_index = (sample as u32 & 0b111) as usize;
-                if mic != 0 || inner_index != 0 {
+                if mic != 1 || inner_index != 1 {
                     continue;
                 }
                 start = false;
