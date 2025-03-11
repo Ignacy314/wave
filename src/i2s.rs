@@ -178,6 +178,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         if **wav == start_file {
             break;
         }
+        wav_iter.next();
     }
 
     //let start_nanos = if let Some(start) = start {
@@ -218,6 +219,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         };
 
         if start {
+            eprintln!("{} {}", file_start_sample, reader.duration());
             if file_start_sample <= reader.duration() {
                 reader.seek(file_start_sample).unwrap();
             } else {
