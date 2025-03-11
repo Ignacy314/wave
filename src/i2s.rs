@@ -165,6 +165,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     if let Some(start) = start {
         let mut diff = i64::MAX;
         for r in records.iter() {
+            eprintln!("record {}", r.time);
             let r_diff = (r.time - start).abs();
             if r_diff < diff {
                 diff = r_diff;
