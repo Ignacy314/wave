@@ -1,12 +1,6 @@
 use std::path::Path;
 
-#[derive(Debug, serde::Deserialize)]
-struct Record {
-    time: i64,
-    sample: u64,
-    file_sample: u32,
-    file: String,
-}
+use crate::Record;
 
 pub fn concat<P: std::convert::AsRef<Path>>(input_dir: P, output: P, clock: P, step: usize) {
     let mut waves = std::fs::read_dir(input_dir.as_ref())

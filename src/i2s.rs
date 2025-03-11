@@ -2,10 +2,12 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
 
-use chrono::{DateTime, FixedOffset};
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::pps::{find_best, find_start, Pps};
+use crate::Record;
+
+const CHANNELS: u32 = 4;
+const FREQ: f64 = 192000.0;
 
 struct CircularI2S {
     _size: usize,
@@ -24,7 +26,9 @@ impl CircularI2S {
 
     fn new<P: std::convert::AsRef<Path>>(path: P, num: u8) -> Self {
         let paths: [String; Self::BUF_SIZE_INNER + 1] = (0..=Self::BUF_SIZE_INNER)
-            .map(|i| format!("{}_{num}_{i}.wav", path.as_ref().display()))
+            .map(|i| {
+                format!("{}_{num}_{i}.wav", path.as_ref().file_stem().unwrap().to_str().unwrap())
+            })
             .collect::<Vec<_>>()
             .try_into()
             .unwrap();
@@ -108,103 +112,150 @@ impl CircularI2S {
 }
 
 pub fn make_wav<P: std::convert::AsRef<Path>>(
-    timestamps: Option<(DateTime<FixedOffset>, DateTime<FixedOffset>)>,
-    path: P,
-    dir: P,
+    output: P,
+    input_dir: P,
+    clock: P,
+    start: Option<i64>,
+    samples: Option<u64>,
 ) {
     let mut bufs = [
-        CircularI2S::new(path.as_ref(), 1),
-        CircularI2S::new(path, 2),
+        CircularI2S::new(output.as_ref(), 1),
+        CircularI2S::new(output.as_ref(), 2),
     ];
 
-    let (from_nanos, to_nanos) = if let Some(timestamps) = timestamps {
-        (
-            timestamps.0.timestamp_nanos_opt().unwrap(),
-            timestamps.1.timestamp_nanos_opt().unwrap(),
-        )
+    let mut waves = std::fs::read_dir(input_dir.as_ref())
+        .unwrap()
+        .flat_map(|f| f.map(|e| e.path()))
+        .collect::<Vec<_>>();
+    waves.sort_unstable();
+
+    let clock_start_nanos_str = clock.as_ref().file_stem().unwrap().to_str().unwrap();
+
+    let mut wav_iter = waves.iter().peekable();
+    while let Some(wav) = wav_iter.peek() {
+        if wav.file_stem().unwrap().to_str().unwrap() == clock_start_nanos_str {
+            break;
+        }
+    }
+
+    if wav_iter.peek().is_none() {
+        eprintln!("Clock start not found");
+        return;
+    }
+
+    let mut reader = csv::Reader::from_path(clock).unwrap();
+
+    let records = reader
+        .deserialize()
+        .map(|r| r.unwrap())
+        .collect::<Vec<Record>>();
+
+    if records.is_empty() {
+        eprintln!("Failed to read clock csv");
+        return;
+    }
+
+    let n_records = records.len();
+
+    let mut start_file = records[0].file.clone();
+    let mut file_start_sample = 0;
+    if let Some(start) = start {
+        let mut diff = i64::MAX;
+        for r in records.iter() {
+            let r_diff = (r.time - start).abs();
+            if r_diff < diff {
+                diff = r_diff;
+                start_file = r.file.clone();
+                let r_diff = start - r.time;
+                let sample_diff = (r_diff as f64 / CHANNELS as f64 / FREQ * 1e9).round() as i64;
+                file_start_sample = (r._file_sample as i64 + sample_diff).max(0);
+            }
+        }
+    }
+    let file_start_sample = file_start_sample as u32;
+
+    while let Some(wav) = wav_iter.peek() {
+        if wav.to_str().unwrap() == start_file {
+            break;
+        }
+    }
+
+    //let start_nanos = if let Some(start) = start {
+    //    start
+    //} else {
+    //    records[0].time - (records[0].sample as f64 / FREQ * 1e9).round() as i64
+    //};
+    let end_file = records[n_records - 1].file.clone();
+
+    let mut samples = if let Some(samples) = samples {
+        [samples; 2]
     } else {
-        panic!("i2s mode only works with timestamps");
+        let samples = records[n_records - 1].sample;
+        [samples; 2]
     };
 
-    //let from_nanos = from.timestamp_nanos_opt().unwrap();
-    //let to_nanos = to.timestamp_nanos_opt().unwrap();
-
-    let (best_pps, mut _best_diff, waves) = find_best(dir.as_ref(), from_nanos);
-
-    eprintln!("{best_pps:?}");
-
-    let channels = 4;
-
-    if let Some(Pps { nanos, sample, file }) = best_pps {
-        let (start_file, start_sample) =
-            find_start(from_nanos, nanos, sample, &file, &waves, channels, 192_000.0);
-
-        let mut samples_left =
-            [((to_nanos - from_nanos) as f64 / 1e9_f64 * 48000.0).round() as u32; 2];
-
-        let n = samples_left[0] * samples_left.len() as u32;
-        let pb = ProgressBar::new(u64::from(n));
-        let t = f64::from(n).log10().ceil() as u64;
-        pb.set_style(
-            ProgressStyle::with_template(&format!(
-            "[{{elapsed_precise}}] {{bar:40.cyan/blue}} {{pos:>{t}}}/{{len:{t}}} ({{percent}}%)"
+    let pb = ProgressBar::new(samples[0] * 2);
+    let t = (2.0 * samples[0] as f64).log10().ceil() as u64;
+    pb.set_style(
+        ProgressStyle::with_template(&format!(
+            "[{{elapsed_precise}}] {{bar:40.cyan/blue}} {{pos:>{t}}}/{{len:{t}}} ({{percent}}%) {{msg}}"
         ))
-            .unwrap()
-            .progress_chars("##-"),
-        );
+        .unwrap()
+        .progress_chars("##-"),
+    );
 
-        let mut start = true;
-        let mut skip = 0;
-        let mut end = false;
-        for wav in waves.iter().skip_while(|x| **x != start_file) {
-            let mut reader = match hound::WavReader::open(wav) {
-                Ok(r) => r,
-                Err(_e) => {
+    let mut start = true;
+    let mut end = false;
+    for wav in wav_iter {
+        let mut reader = match hound::WavReader::open(wav) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("Error reading file: {e}");
+                return;
+            }
+        };
+
+        if start {
+            if file_start_sample <= reader.duration() {
+                reader.seek(file_start_sample).unwrap();
+            } else {
+                continue;
+            }
+        }
+
+        for s in reader.samples::<i32>().step_by(2) {
+            let sample = s.unwrap();
+            if start {
+                let mic = ((sample as u32 & 0b1000) >> 3) as usize;
+                let inner_index = (sample as u32 & 0b111) as usize;
+                if mic != 0 || inner_index != 0 {
                     continue;
                 }
-            };
-            if start {
-                reader.seek(start_sample / channels).unwrap();
+                start = false;
             }
-            for s in reader.samples::<i32>() {
-                let sample = s.unwrap();
-                if start {
-                    let mic = ((sample as u32 & 0b1000) >> 3) as usize;
-                    let inner_index = (sample as u32 & 0b111) as usize;
-                    if mic != 0 || inner_index != 0 {
-                        continue;
-                    }
-                    start = false;
-                }
-                if skip > 0 {
-                    skip -= 1;
-                } else if sample == 0xeeee_eeee_u32 as i32 {
-                    skip += 3;
-                } else {
-                    let mic = ((sample as u32 & 0b1000) >> 3) as usize;
+            let mic = ((sample as u32 & 0b1000) >> 3) as usize;
 
-                    let inner_index = (sample as u32 & 0b111) as usize;
+            let inner_index = (sample as u32 & 0b111) as usize;
 
-                    if samples_left[mic] > 0 && bufs[mic].set_inner(sample, inner_index) {
-                        bufs[mic].compute_samples();
-                        samples_left[mic] -= 1;
-                        pb.inc(1);
-                    }
-
-                    if samples_left.iter().all(|x| *x == 0) {
-                        end = true;
-                        break;
-                    }
-                }
+            if samples[mic] > 0 && bufs[mic].set_inner(sample, inner_index) {
+                bufs[mic].compute_samples();
+                samples[mic] -= 1;
+                pb.inc(1);
             }
-            if end {
+
+            if samples.iter().all(|x| *x == 0) {
+                end = true;
                 break;
             }
         }
 
-        for b in bufs {
-            b.finalize();
+        if end || wav.to_str().unwrap() == end_file {
+            break;
         }
-        pb.finish();
     }
+    for b in bufs {
+        b.finalize();
+    }
+    let samples_processed = pb.position();
+    pb.finish_with_message(format!("Samples processed: {samples_processed}"));
 }
