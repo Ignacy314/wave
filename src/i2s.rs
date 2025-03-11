@@ -181,6 +181,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     let file_start_sample = file_start_sample as u32;
 
     while let Some(wav) = wav_iter.peek() {
+        eprintln!("{} {}", wav.to_str().unwrap(), start_file);
         if wav.to_str().unwrap() == start_file {
             break;
         }
