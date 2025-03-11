@@ -166,6 +166,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                 diff = r_diff;
                 start_file = r.file.clone();
                 let r_diff = start - r.time;
+                eprintln!("{r_diff}");
                 let sample_diff = (r_diff as f64 / CHANNELS as f64 / FREQ * 1e9).round() as i64;
                 file_start_sample = (r.file_sample as i64 + sample_diff).max(0);
             }
@@ -196,7 +197,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         [samples; 2]
     };
 
-    eprintln!("{:?}", samples);
     let pb = ProgressBar::new(samples[0] * 2);
     let t = (2.0 * samples[0] as f64).log10().ceil() as u64;
     pb.set_style(
@@ -219,7 +219,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         };
 
         if start {
-            eprintln!("{} {}", file_start_sample, reader.duration());
             if file_start_sample <= reader.duration() {
                 reader.seek(file_start_sample).unwrap();
             } else {
