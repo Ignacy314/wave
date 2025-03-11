@@ -159,6 +159,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
     let n_records = records.len();
 
+    eprintln!("Find start file and sample");
     let mut start_file = records[0].file.clone();
     let mut file_start_sample = 0;
     if let Some(start) = start {
@@ -196,6 +197,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         [samples; 2]
     };
 
+    eprintln!("Create progress bar");
     let pb = ProgressBar::new(samples[0] * 2);
     let t = (2.0 * samples[0] as f64).log10().ceil() as u64;
     pb.set_style(
