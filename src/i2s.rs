@@ -118,11 +118,13 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     start: Option<i64>,
     samples: Option<u64>,
 ) {
+    eprintln!("Start i2s");
     let mut bufs = [
         CircularI2S::new(output.as_ref(), 1),
         CircularI2S::new(output.as_ref(), 2),
     ];
 
+    eprintln!("read waves");
     let mut waves = std::fs::read_dir(input_dir.as_ref())
         .unwrap()
         .flat_map(|f| f.map(|e| e.path()))
@@ -131,6 +133,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
     let clock_start_nanos_str = clock.as_ref().file_stem().unwrap().to_str().unwrap();
 
+    eprintln!("create wave iter");
     let mut wav_iter = waves.iter().peekable();
     while let Some(wav) = wav_iter.peek() {
         if wav.file_stem().unwrap().to_str().unwrap() == clock_start_nanos_str {
@@ -143,6 +146,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         return;
     }
 
+    eprintln!("read csv");
     let mut reader = csv::Reader::from_path(clock).unwrap();
 
     let records = reader
