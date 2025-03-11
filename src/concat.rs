@@ -2,7 +2,7 @@ use std::path::Path;
 
 #[derive(Debug, serde::Deserialize)]
 struct Record {
-    nanos: i64,
+    time: i64,
     sample: u64,
     file_sample: u32,
     file: String,
@@ -41,7 +41,7 @@ pub fn concat<P: std::convert::AsRef<Path>>(input_dir: P, output: P, clock: P, s
     let mut reader = csv::Reader::from_path(clock).unwrap();
     if let Some(record) = reader.deserialize().next() {
         let r: Record = record.unwrap();
-        start_nanos = r.nanos - (r.sample as f64 / 48000.0 * 1e9).round() as i64;
+        start_nanos = r.time - (r.sample as f64 / 48000.0 * 1e9).round() as i64;
     }
     if let Some(record) = reader.deserialize().last() {
         let r: Record = record.unwrap();
