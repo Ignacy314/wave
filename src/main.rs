@@ -66,7 +66,7 @@ struct Args {
 struct Record {
     time: i64,
     sample: u64,
-    _file_sample: u32,
+    file_sample: u32,
     file: String,
 }
 
