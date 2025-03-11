@@ -98,7 +98,7 @@ impl CircularI2S {
                     j += step;
                 }
 
-                let sample = sample as i32;
+                let sample = sample.round() as i32;
                 self.files[i].write_sample(sample).unwrap();
             }
         }
