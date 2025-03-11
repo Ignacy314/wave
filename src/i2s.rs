@@ -94,14 +94,13 @@ impl CircularI2S {
                 let mut sample = 0f64;
 
                 for k in 0..8 {
-                    sample += f64::from(self.get(j, k)) / 8.0;
+                    sample += f64::from(self.get(j, k));
                     j += step;
                 }
 
-                let sample = sample as i32;
+                let sample = (sample / 8.0).round() as i32;
                 self.files[i].write_sample(sample).unwrap();
             }
-            self.filled = false;
         }
     }
 
