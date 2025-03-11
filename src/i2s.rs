@@ -230,6 +230,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             if start {
                 let mic = ((sample as u32 & 0b1000) >> 3) as usize;
                 let inner_index = (sample as u32 & 0b111) as usize;
+                println!("{} {}", mic, inner_index);
                 if mic != 0 || inner_index != 0 {
                     continue;
                 }
