@@ -34,6 +34,9 @@ struct ConcatArgs {
     #[arg(short, long)]
     /// Path to input directory containing wav files
     input_dir: String,
+    /// Path to a csv clock file
+    #[arg(short, long)]
+    clock_file: String,
     /// Step by that many samples
     #[arg(short, long)]
     step: Option<usize>,
@@ -111,7 +114,7 @@ fn main() {
             }
         }
         Commands::Concat(args) => {
-            concat(args.input_dir, args.output, args.step.unwrap_or(1));
+            concat(args.input_dir, args.output, args.clock_file, args.step.unwrap_or(1));
         }
     }
 }
