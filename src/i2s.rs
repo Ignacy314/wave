@@ -116,13 +116,11 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     start: Option<i64>,
     samples: Option<u64>,
 ) {
-    eprintln!("Start i2s");
     let mut bufs = [
         CircularI2S::new(output.as_ref(), 1),
         CircularI2S::new(output.as_ref(), 2),
     ];
 
-    eprintln!("read waves");
     let mut waves = std::fs::read_dir(input_dir.as_ref())
         .unwrap()
         .flat_map(|f| f.map(|e| e.path()))
@@ -131,7 +129,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
     let clock_start_nanos_str = clock.as_ref().file_stem().unwrap().to_str().unwrap();
 
-    eprintln!("create wave iter");
     let mut wav_iter = waves.iter().peekable();
     while let Some(wav) = wav_iter.peek() {
         if wav.file_stem().unwrap().to_str().unwrap() == clock_start_nanos_str {
@@ -144,9 +141,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         eprintln!("Clock start not found");
         return;
     }
-    eprintln!("{}", wav_iter.peek().unwrap().display());
 
-    eprintln!("read csv");
     let mut reader = csv::Reader::from_path(clock).unwrap();
 
     let records = reader
@@ -161,7 +156,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
     let n_records = records.len();
 
-    eprintln!("Find start file and sample");
     let mut start_file = records[0].file.clone();
     let mut file_start_sample = 0;
     if let Some(start) = start {
@@ -177,7 +171,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             }
         }
     }
-    eprintln!("{start_file}");
     let start_file = input_dir.as_ref().join(start_file);
     let file_start_sample = file_start_sample as u32;
 
@@ -202,7 +195,12 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         [samples; 2]
     };
 
-    eprintln!("Create progress bar");
+    eprintln!(
+        "{}\n{}\n{}",
+        start_file.display(),
+        wav_iter.peek().unwrap().display(),
+        end_file.display()
+    );
     let pb = ProgressBar::new(samples[0] * 2);
     let t = (2.0 * samples[0] as f64).log10().ceil() as u64;
     pb.set_style(
