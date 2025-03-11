@@ -166,8 +166,8 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                 diff = r_diff;
                 start_file = r.file.clone();
                 let r_diff = start - r.time;
-                eprintln!("{r_diff}");
                 let sample_diff = (r_diff as f64 / CHANNELS as f64 / FREQ * 1e9).round() as i64;
+                eprintln!("{sample_diff}");
                 file_start_sample = (r.file_sample as i64 + sample_diff).max(0);
             }
         }
