@@ -91,14 +91,14 @@ impl CircularI2S {
                 let mut j = Self::MID * i;
                 let step = Self::MID - i;
 
-                let mut sample = 0i32;
+                let mut sample = 0f64;
 
                 for k in 0..8 {
-                    sample += self.get(j, k);
+                    sample += f64::from(self.get(j, k)) / 8.0;
                     j += step;
                 }
 
-                //let sample = sample.round() as i32;
+                let sample = sample.round() as i32;
                 self.files[i].write_sample(sample).unwrap();
             }
         }
@@ -230,7 +230,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             if start {
                 let mic = ((sample as u32 & 0b1000) >> 3) as usize;
                 let inner_index = (sample as u32 & 0b111) as usize;
-                println!("{} {}", mic, inner_index);
                 if mic != 0 || inner_index != 0 {
                     continue;
                 }
