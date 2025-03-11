@@ -6,7 +6,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::Record;
 
-const CHANNELS: u32 = 4;
+//const CHANNELS: u32 = 4;
 const FREQ: f64 = 192000.0;
 
 struct CircularI2S {
@@ -101,6 +101,7 @@ impl CircularI2S {
                 let sample = sample as i32;
                 self.files[i].write_sample(sample).unwrap();
             }
+            self.filled = false;
         }
     }
 
