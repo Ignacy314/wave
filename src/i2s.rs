@@ -137,12 +137,14 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         if wav.file_stem().unwrap().to_str().unwrap() == clock_start_nanos_str {
             break;
         }
+        wav_iter.next();
     }
 
     if wav_iter.peek().is_none() {
         eprintln!("Clock start not found");
         return;
     }
+    eprintln!("{}", wav_iter.peek().unwrap().display());
 
     eprintln!("read csv");
     let mut reader = csv::Reader::from_path(clock).unwrap();
@@ -165,7 +167,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     if let Some(start) = start {
         let mut diff = i64::MAX;
         for r in records.iter() {
-            eprintln!("record {}", r.time);
             let r_diff = (r.time - start).abs();
             if r_diff < diff {
                 diff = r_diff;
@@ -176,6 +177,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             }
         }
     }
+    eprintln!("{start_file}");
     let file_start_sample = file_start_sample as u32;
 
     while let Some(wav) = wav_iter.peek() {
