@@ -26,9 +26,7 @@ impl CircularI2S {
 
     fn new<P: std::convert::AsRef<Path>>(path: P, num: u8) -> Self {
         let paths: [String; Self::BUF_SIZE_INNER + 1] = (0..=Self::BUF_SIZE_INNER)
-            .map(|i| {
-                format!("{}_{num}_{i}.wav", path.as_ref().file_stem().unwrap().to_str().unwrap())
-            })
+            .map(|i| format!("{}_{num}_{i}.wav", path.as_ref().display()))
             .collect::<Vec<_>>()
             .try_into()
             .unwrap();
