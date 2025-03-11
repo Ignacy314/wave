@@ -166,8 +166,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                 diff = r_diff;
                 start_file = r.file.clone();
                 let r_diff = start - r.time;
-                let sample_diff = (r_diff as f64 / CHANNELS as f64 / FREQ * 1e9).round() as i64;
-                eprintln!("{sample_diff}");
+                let sample_diff = (r_diff as f64 * FREQ / 1e9).round() as i64;
                 file_start_sample = (r.file_sample as i64 + sample_diff).max(0);
             }
         }
@@ -226,7 +225,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             }
         }
 
-        for s in reader.samples::<i32>().step_by(2) {
+        for s in reader.samples::<i32>() {
             let sample = s.unwrap();
             if start {
                 let mic = ((sample as u32 & 0b1000) >> 3) as usize;
