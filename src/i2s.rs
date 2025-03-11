@@ -195,12 +195,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         [samples; 2]
     };
 
-    eprintln!(
-        "{}\n{}\n{}",
-        start_file.display(),
-        wav_iter.peek().unwrap().display(),
-        end_file.display()
-    );
+    eprintln!("{:?}", samples);
     let pb = ProgressBar::new(samples[0] * 2);
     let t = (2.0 * samples[0] as f64).log10().ceil() as u64;
     pb.set_style(
@@ -257,6 +252,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         }
 
         if end || *wav == end_file {
+            eprintln!("{end}");
             break;
         }
     }
