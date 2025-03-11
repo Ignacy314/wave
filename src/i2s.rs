@@ -178,11 +178,11 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         }
     }
     eprintln!("{start_file}");
+    let start_file = input_dir.as_ref().join(start_file);
     let file_start_sample = file_start_sample as u32;
 
     while let Some(wav) = wav_iter.peek() {
-        eprintln!("{} {}", wav.to_str().unwrap(), start_file);
-        if wav.to_str().unwrap() == start_file {
+        if **wav == start_file {
             break;
         }
     }
@@ -193,6 +193,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     //    records[0].time - (records[0].sample as f64 / FREQ * 1e9).round() as i64
     //};
     let end_file = records[n_records - 1].file.clone();
+    let end_file = input_dir.as_ref().join(end_file);
 
     let mut samples = if let Some(samples) = samples {
         [samples; 2]
@@ -257,7 +258,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             }
         }
 
-        if end || wav.to_str().unwrap() == end_file {
+        if end || *wav == end_file {
             break;
         }
     }
