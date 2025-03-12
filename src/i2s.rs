@@ -129,7 +129,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
     let clock_start_nanos_str = clock.as_ref().file_stem().unwrap().to_str().unwrap();
 
-    eprintln!("Go to clock start");
     let mut wav_iter = waves.iter().peekable();
     while let Some(wav) = wav_iter.peek() {
         if wav.file_stem().unwrap().to_str().unwrap() == clock_start_nanos_str {
@@ -173,16 +172,15 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         }
     }
     let start_file = input_dir.as_ref().join(start_file);
-    let file_start_sample = file_start_sample as u32;
+    let mut file_start_sample = file_start_sample as u32;
+    eprintln!("{file_start_sample}");
 
-    eprintln!("Go to time start");
     while let Some(wav) = wav_iter.peek() {
         if **wav == start_file {
             break;
         }
         wav_iter.next();
     }
-    eprintln!("After time start");
 
     //let start_nanos = if let Some(start) = start {
     //    start
@@ -200,7 +198,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     };
 
 
-    eprintln!("pb");
     let pb = ProgressBar::new(samples[0] * 2);
     let t = (2.0 * samples[0] as f64).log10().ceil() as u64;
     pb.set_style(
@@ -213,7 +210,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
     let mut med = Vec::new();
 
-    eprintln!("start");
     let mut start = true;
     let mut end = false;
     for wav in wav_iter {
@@ -229,6 +225,8 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             if file_start_sample <= reader.duration() {
                 reader.seek(file_start_sample).unwrap();
             } else {
+                file_start_sample -= reader.duration();
+                eprintln!("{file_start_sample}");
                 continue;
             }
         }
