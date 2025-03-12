@@ -173,7 +173,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     }
     let start_file = input_dir.as_ref().join(start_file);
     let mut file_start_sample = file_start_sample as u32;
-    eprintln!("{file_start_sample}");
 
     while let Some(wav) = wav_iter.peek() {
         if **wav == start_file {
@@ -213,7 +212,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     let mut start = true;
     let mut end = false;
     for wav in wav_iter {
-        eprintln!("iter");
         let mut reader = match hound::WavReader::open(wav) {
             Ok(r) => r,
             Err(e) => {
@@ -227,7 +225,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                 reader.seek(file_start_sample).unwrap();
             } else {
                 file_start_sample -= reader.duration();
-                eprintln!("{file_start_sample}");
                 continue;
             }
         }
