@@ -261,11 +261,12 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             break;
         }
     }
-    med.sort_unstable();
-    let med = med[med.len() / 2];
     for b in bufs {
         b.finalize();
     }
     let samples_processed = pb.position();
-    pb.finish_with_message(format!("Samples processed: {samples_processed} | Median: {med}"));
+    pb.finish_with_message(format!("Samples processed: {samples_processed}"));
+    med.sort_unstable();
+    let med = med[med.len() / 2];
+    println!("median: {med}");
 }
