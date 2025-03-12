@@ -182,6 +182,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         }
         wav_iter.next();
     }
+    eprintln!("After time start");
 
     //let start_nanos = if let Some(start) = start {
     //    start
