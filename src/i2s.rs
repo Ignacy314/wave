@@ -213,6 +213,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     let mut start = true;
     let mut end = false;
     for wav in wav_iter {
+        eprintln!("iter");
         let mut reader = match hound::WavReader::open(wav) {
             Ok(r) => r,
             Err(e) => {
