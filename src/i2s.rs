@@ -199,6 +199,8 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         [samples; 2]
     };
 
+
+    eprintln!("pb");
     let pb = ProgressBar::new(samples[0] * 2);
     let t = (2.0 * samples[0] as f64).log10().ceil() as u64;
     pb.set_style(
@@ -211,6 +213,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
     let mut med = Vec::new();
 
+    eprintln!("start");
     let mut start = true;
     let mut end = false;
     for wav in wav_iter {
