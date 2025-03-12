@@ -206,6 +206,8 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         .progress_chars("##-"),
     );
 
+    let mut med = Vec::new();
+
     let mut start = true;
     let mut end = false;
     for wav in wav_iter {
@@ -227,6 +229,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
         for s in reader.samples::<i32>() {
             let sample = s.unwrap();
+            med.push(sample);
             if start {
                 let mic = ((sample as u32 & 0b1000) >> 3) as usize;
                 let inner_index = (sample as u32 & 0b111) as usize;
@@ -256,9 +259,11 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             break;
         }
     }
+    med.sort_unstable();
+    let med = med[med.len() / 2];
     for b in bufs {
         b.finalize();
     }
     let samples_processed = pb.position();
-    pb.finish_with_message(format!("Samples processed: {samples_processed}"));
+    pb.finish_with_message(format!("Samples processed: {samples_processed} | Median: {med}"));
 }
