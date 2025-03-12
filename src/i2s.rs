@@ -129,6 +129,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
     let clock_start_nanos_str = clock.as_ref().file_stem().unwrap().to_str().unwrap();
 
+    eprintln!("Go to clock start");
     let mut wav_iter = waves.iter().peekable();
     while let Some(wav) = wav_iter.peek() {
         if wav.file_stem().unwrap().to_str().unwrap() == clock_start_nanos_str {
@@ -174,6 +175,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     let start_file = input_dir.as_ref().join(start_file);
     let file_start_sample = file_start_sample as u32;
 
+    eprintln!("Go to time start");
     while let Some(wav) = wav_iter.peek() {
         if **wav == start_file {
             break;
