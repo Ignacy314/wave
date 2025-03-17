@@ -7,6 +7,7 @@ mod concat;
 mod i2s;
 //mod pps;
 mod umc;
+mod cut_one;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -22,6 +23,24 @@ enum Commands {
     Concat(ConcatArgs),
     /// Concat and optionally cut waves while removing PPS
     Cut(Args),
+    /// Cut one file
+    CutOne(CutOneArgs)
+}
+
+#[derive(clap::Args)]
+struct CutOneArgs {
+    /// Path to output file
+    #[arg(short, long)]
+    output: String,
+    /// Path to input file
+    #[arg(short, long)]
+    input_dir: String,
+    /// Start sample
+    #[arg(short, long)]
+    start: u64,
+    /// Number of samples to write
+    #[arg(short, long)]
+    samples: u64
 }
 
 #[derive(clap::Args)]
@@ -98,6 +117,9 @@ fn main() {
         }
         Commands::Concat(args) => {
             concat(args.input_dir, args.output, args.clock_file, args.step.unwrap_or(1));
+        }
+        Commands::CutOne(args) => {
+
         }
     }
 }

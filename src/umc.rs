@@ -40,6 +40,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         if wav.file_stem().unwrap().to_str().unwrap() == clock_start_nanos_str {
             break;
         }
+        wav_iter.next();
     }
 
     if wav_iter.peek().is_none() {
@@ -71,15 +72,16 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                 diff = r_diff;
                 start_file = r.file.clone();
                 let r_diff = start - r.time;
-                let sample_diff = (r_diff as f64 / CHANNELS as f64 / FREQ * 1e9).round() as i64;
+                let sample_diff = (r_diff as f64 * FREQ / 1e9).round() as i64;
                 file_start_sample = (r.file_sample as i64 + sample_diff).max(0);
             }
         }
     }
-    let file_start_sample = file_start_sample as u32;
+    let start_file = input_dir.as_ref().join(start_file);
+    let mut file_start_sample = file_start_sample as u32;
 
     while let Some(wav) = wav_iter.peek() {
-        if wav.to_str().unwrap() == start_file {
+        if **wav == start_file {
             break;
         }
     }
@@ -90,6 +92,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     //    records[0].time - (records[0].sample as f64 / FREQ * 1e9).round() as i64
     //};
     let end_file = records[n_records - 1].file.clone();
+    let end_file = input_dir.as_ref().join(end_file);
 
     let mut samples = if let Some(samples) = samples {
         samples
@@ -125,6 +128,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                 reader.seek(file_start_sample).unwrap();
                 start = false;
             } else {
+                file_start_sample -= reader.duration();
                 continue;
             }
         }
@@ -140,7 +144,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             }
         }
 
-        if end || wav.to_str().unwrap() == end_file {
+        if end || *wav == end_file {
             break;
         }
     }
