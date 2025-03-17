@@ -5,7 +5,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use crate::Record;
 
 const FREQ: f64 = 48000.0;
-const CHANNELS: u32 = 2;
+//const CHANNELS: u32 = 2;
 
 //fn wav_file_to_nanos(f: &Path) -> i64 {
 //    let str = f.file_name().unwrap().to_str().unwrap();

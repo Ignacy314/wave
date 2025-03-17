@@ -34,10 +34,10 @@ struct CutOneArgs {
     output: String,
     /// Path to input file
     #[arg(short, long)]
-    input_dir: String,
+    input: String,
     /// Start sample
     #[arg(short, long)]
-    start: u64,
+    start: u32,
     /// Number of samples to write
     #[arg(short, long)]
     samples: u64
@@ -119,7 +119,7 @@ fn main() {
             concat(args.input_dir, args.output, args.clock_file, args.step.unwrap_or(1));
         }
         Commands::CutOne(args) => {
-
+            cut_one::make_wav(args.output, args.input, args.start, args.samples);
         }
     }
 }
