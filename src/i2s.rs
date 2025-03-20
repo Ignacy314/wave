@@ -257,7 +257,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         }
 
         if end || *wav == end_file {
-            eprintln!("{end}");
             break;
         }
     }
