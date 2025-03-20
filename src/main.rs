@@ -79,8 +79,11 @@ struct Args {
     /// 'umc' or 'i2s'
     #[arg(short, long)]
     mode: String,
+    #[arg(short, long)]
     step: Option<usize>,
+    #[arg(short, long)]
     channels: Option<u16>,
+    #[arg(short, long)]
     sample_rate: Option<u32>
 }
 
