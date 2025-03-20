@@ -229,6 +229,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             }
         }
 
+        let mut counter = 0;
         for s in reader.samples::<i32>() {
             let sample = s.unwrap();
             med.push(sample);
@@ -236,6 +237,11 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
                 let mic = ((sample as u32 & 0b1000) >> 3) as usize;
                 let inner_index = (sample as u32 & 0b111) as usize;
                 if mic != 1 || inner_index != 1 {
+                    counter += 1;
+                    if counter >= 32 {
+                        end = true;
+                        break;
+                    }
                     continue;
                 }
                 start = false;
