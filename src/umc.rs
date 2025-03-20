@@ -13,12 +13,16 @@ const FREQ: f64 = 48000.0;
 //    str.parse::<i64>().unwrap()
 //}
 
+#[allow(clippy::too_many_arguments)]
 pub fn make_wav<P: std::convert::AsRef<Path>>(
     output: P,
     input_dir: P,
     clock: P,
     start: Option<i64>,
     samples: Option<u64>,
+    step: Option<usize>,
+    channels: Option<u16>,
+    sample_rate: Option<u32>
 ) {
     let mut waves = std::fs::read_dir(input_dir.as_ref())
         .unwrap()
@@ -27,8 +31,8 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     waves.sort_unstable();
 
     let spec = hound::WavSpec {
-        channels: 1,
-        sample_rate: 48000,
+        channels: channels.unwrap_or(1),
+        sample_rate: sample_rate.unwrap_or(48000),
         bits_per_sample: 32,
         sample_format: hound::SampleFormat::Int,
     };
@@ -134,7 +138,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
             }
         }
 
-        for s in reader.samples::<i32>().step_by(2) {
+        for s in reader.samples::<i32>().step_by(step.unwrap_or(2)) {
             if samples != 0 {
                 writer.write_sample(s.unwrap()).unwrap();
                 samples -= 1;

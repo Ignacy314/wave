@@ -79,6 +79,9 @@ struct Args {
     /// 'umc' or 'i2s'
     #[arg(short, long)]
     mode: String,
+    step: Option<usize>,
+    channels: Option<u16>,
+    sample_rate: Option<u32>
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -102,6 +105,9 @@ fn main() {
                     args.clock_file,
                     args.start,
                     args.samples,
+                    args.step,
+                    args.channels,
+                    args.sample_rate
                 );
             } else if mode == "i2s" {
                 i2s::make_wav(
