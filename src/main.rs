@@ -117,7 +117,7 @@ fn runs(
         return vec![Run {
             start,
             samples,
-            output_dir_ext: format!("{mode}/{module}/D{module}_"),
+            output_dir_ext: format!("{mode}/{module}"),
         }];
     };
 
@@ -147,7 +147,7 @@ fn runs(
         runs.push(Run {
             start: Some(start_nanos),
             samples: Some(samples),
-            output_dir_ext: format!("{mode}/{module}/{}/D{module}_", cut.range),
+            output_dir_ext: format!("{mode}/{module}/{}", cut.range),
         });
     }
 
@@ -163,7 +163,12 @@ fn main() {
                 .iter()
                 .enumerate()
             {
-                let output = format!("{}/{}{i}.wav", &args.output, run.output_dir_ext);
+                let output_dir = format!("{}/{}", &args.output, run.output_dir_ext);
+                match std::fs::create_dir_all(&output_dir) {
+                    Ok(_) => {},
+                    Err(err) => eprintln!("Creating dir: {err}")
+                }
+                let output = format!("{}/D{}_{i}.wav", output_dir, args.module);
                 let mode = &args.mode;
                 if mode == "umc" {
                     umc::make_wav(
