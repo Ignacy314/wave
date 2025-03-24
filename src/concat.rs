@@ -37,9 +37,8 @@ pub fn concat<P: std::convert::AsRef<Path>>(input_dir: P, output: P, clock: P, s
         let r: Record = record.unwrap();
         start_nanos = r.time - (r.sample as f64 / 48000.0 * 1e9).round() as i64;
     }
-    if let Some(record) = reader.deserialize().last() {
-        let r: Record = record.unwrap();
-        end_file = r.file;
+    if let Some(Ok(Record { file, .. })) = reader.deserialize().last() {
+        end_file = file;
     }
 
     let start = chrono::DateTime::from_timestamp_nanos(start_nanos);
