@@ -22,7 +22,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     samples: Option<u64>,
     step: Option<usize>,
     channels: Option<u16>,
-    sample_rate: Option<u32>
+    sample_rate: Option<u32>,
 ) {
     let mut waves = std::fs::read_dir(input_dir.as_ref())
         .unwrap()
@@ -56,7 +56,8 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
     let records = reader
         .deserialize()
-        .map(|r| r.unwrap())
+        .flatten()
+        //.map(|r| r.unwrap())
         .collect::<Vec<Record>>();
 
     if records.is_empty() {
