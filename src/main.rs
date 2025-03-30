@@ -98,6 +98,7 @@ struct CutRecord {
     start: String,
     end: String,
     range: String,
+    flight: String,
 }
 
 struct Run {
@@ -147,7 +148,7 @@ fn runs(
         runs.push(Run {
             start: Some(start_nanos),
             samples: Some(samples),
-            output_dir_ext: format!("{mode}/{module}/{}", cut.range),
+            output_dir_ext: format!("{mode}/{module}/{}/{}", cut.flight, cut.range),
         });
     }
 
@@ -165,8 +166,8 @@ fn main() {
             {
                 let output_dir = format!("{}/{}", &args.output, run.output_dir_ext);
                 match std::fs::create_dir_all(&output_dir) {
-                    Ok(_) => {},
-                    Err(err) => eprintln!("Creating dir: {err}")
+                    Ok(_) => {}
+                    Err(err) => eprintln!("Creating dir: {err}"),
                 }
                 let output = format!("{}/D{}_{i}.wav", output_dir, args.module);
                 let mode = &args.mode;
