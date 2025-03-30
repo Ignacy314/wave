@@ -145,10 +145,20 @@ fn runs(
         let samples =
             ((end_nanos - start_nanos) as f64 / 1e9f64 * channels as f64 * sample_rate as f64)
                 .round() as u64;
+        let flight_name = if cut.flight != "." {
+            format!("flight_{}/", cut.flight)
+        } else {
+            "".to_owned()
+        };
+        let range_name = if cut.range != "." {
+            format!("{}/", cut.range)
+        } else {
+            "".to_owned()
+        };
         runs.push(Run {
             start: Some(start_nanos),
             samples: Some(samples),
-            output_dir_ext: format!("{mode}/{module}/{}/{}", cut.flight, cut.range),
+            output_dir_ext: format!("{mode}/{flight_name}{module}/{range_name}"),
         });
     }
 
