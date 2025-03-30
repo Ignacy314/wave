@@ -116,6 +116,7 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         .progress_chars("##-"),
     );
 
+    std::fs::create_dir_all(Path::new(output.as_ref()).parent().unwrap_or(Path::new(""))).unwrap();
     let mut writer = hound::WavWriter::create(output, spec).unwrap();
 
     let mut start = true;
