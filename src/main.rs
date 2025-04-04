@@ -62,15 +62,15 @@ struct ConcatArgs {
 
 #[derive(clap::Args)]
 struct Args {
-    /// Path to output file (without .wav extension - for i2s mode it's the base name for all output files)
+    /// Path to output dir base
     #[arg(short, long)]
-    output: String,
+    output_dir: String,
     /// Path to input directory containing wav files with names being numbers of nanoseconds since unix epoch
     #[arg(short, long)]
     input_dir: String,
-    /// Path to a csv clock file
+    /// Path to a csv clock dir which contains a single clock file
     #[arg(short, long)]
-    clock_file: String,
+    clock_dir: String,
     /// 'umc' or 'i2s'
     #[arg(short, long)]
     mode: String,
@@ -174,18 +174,27 @@ fn main() {
                 .iter()
                 .enumerate()
             {
-                let output_dir = format!("{}/{}", &args.output, run.output_dir_ext);
+                let output_dir = format!("{}/{}", &args.output_dir, run.output_dir_ext);
                 match std::fs::create_dir_all(&output_dir) {
                     Ok(_) => {}
                     Err(err) => eprintln!("Creating dir: {err}"),
                 }
                 let output = format!("{}/D{}_{i}.wav", output_dir, args.module);
                 let mode = &args.mode;
+                let clock_file = std::fs::read_dir(&args.clock_dir)
+                    .unwrap()
+                    .next()
+                    .unwrap()
+                    .unwrap()
+                    .path()
+                    .to_str()
+                    .unwrap()
+                    .to_owned();
                 if mode == "umc" {
                     umc::make_wav(
                         &output,
                         &args.input_dir,
-                        &args.clock_file,
+                        &clock_file,
                         run.start,
                         run.samples,
                         None,
@@ -193,18 +202,12 @@ fn main() {
                         None,
                     );
                 } else if mode == "i2s" {
-                    i2s::make_wav(
-                        &output,
-                        &args.input_dir,
-                        &args.clock_file,
-                        run.start,
-                        run.samples,
-                    );
+                    i2s::make_wav(&output, &args.input_dir, &clock_file, run.start, run.samples);
                 } else if mode == "rawi2s" {
                     umc::make_wav(
                         &output,
                         &args.input_dir,
-                        &args.clock_file,
+                        &clock_file,
                         run.start,
                         run.samples,
                         Some(1),
