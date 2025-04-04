@@ -52,9 +52,9 @@ struct ConcatArgs {
     /// Path to input directory containing wav files
     #[arg(short, long)]
     input_dir: String,
-    /// Path to a csv clock file
+    /// Path to a dir containing a single clock file
     #[arg(short, long)]
-    clock_file: String,
+    clock_dir: String,
     /// Step by that many samples
     #[arg(short, long)]
     step: Option<usize>,
@@ -220,7 +220,16 @@ fn main() {
             }
         }
         Commands::Concat(args) => {
-            concat(args.input_dir, args.output, args.clock_file, args.step.unwrap_or(1));
+            let clock_file = std::fs::read_dir(&args.clock_dir)
+                .unwrap()
+                .next()
+                .unwrap()
+                .unwrap()
+                .path()
+                .to_str()
+                .unwrap()
+                .to_owned();
+            concat(args.input_dir, args.output, clock_file, args.step.unwrap_or(1));
         }
         Commands::CutOne(args) => {
             cut_one::make_wav(args.output, args.input, args.start, args.samples);
