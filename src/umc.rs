@@ -70,17 +70,27 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
     let mut start_file = records[0].file.clone();
     let mut file_start_sample = 0;
     if let Some(start) = start {
-        let mut diff = i64::MAX;
-        for r in records.iter() {
-            let r_diff = (r.time - start).abs();
-            if r_diff < diff {
-                diff = r_diff;
-                start_file = r.file.clone();
-                let r_diff = start - r.time;
-                let sample_diff = (r_diff as f64 * FREQ / 1e9).round() as i64;
-                file_start_sample = (r.file_sample as i64 + sample_diff).max(0);
+        if records[0].time - (records[0].file_sample as f64 / FREQ * 1e9).round() as i64 > start
+            || records[n_records - 1].time < start
+        {
+            file_start_sample = -1;
+        } else {
+            let mut diff = i64::MAX;
+            for r in records.iter() {
+                let r_diff = (r.time - start).abs();
+                if r_diff < diff {
+                    diff = r_diff;
+                    start_file = r.file.clone();
+                    let r_diff = start - r.time;
+                    let sample_diff = (r_diff as f64 * FREQ / 1e9).round() as i64;
+                    file_start_sample = (r.file_sample as i64 + sample_diff).max(0);
+                }
             }
         }
+    }
+    if file_start_sample == -1 {
+        eprintln!("Requested start not in audio data time range");
+        return;
     }
     let start_file = input_dir.as_ref().join(start_file);
     let mut file_start_sample = file_start_sample as u32;
