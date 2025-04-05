@@ -23,6 +23,7 @@ pub fn concat<P: std::convert::AsRef<Path>>(input_dir: P, output: P, clock: P, s
         if wav.file_stem().unwrap().to_str().unwrap() == clock_start_nanos_str {
             break;
         }
+        wav_iter.next();
     }
 
     if wav_iter.peek().is_none() {
