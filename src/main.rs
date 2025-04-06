@@ -181,41 +181,51 @@ fn main() {
                 }
                 let output = format!("{}/D{}_{i}.wav", output_dir, args.module);
                 let mode = &args.mode;
-                let clock_file = std::fs::read_dir(&args.clock_dir)
-                    .unwrap()
-                    .next()
-                    .unwrap()
-                    .unwrap()
-                    .path()
-                    .to_str()
-                    .unwrap()
-                    .to_owned();
-                if mode == "umc" {
-                    umc::make_wav(
-                        &output,
-                        &args.input_dir,
-                        &clock_file,
-                        run.start,
-                        run.samples,
-                        None,
-                        None,
-                        None,
-                    );
-                } else if mode == "i2s" {
-                    i2s::make_wav(&output, &args.input_dir, &clock_file, run.start, run.samples);
-                } else if mode == "rawi2s" {
-                    umc::make_wav(
-                        &output,
-                        &args.input_dir,
-                        &clock_file,
-                        run.start,
-                        run.samples,
-                        Some(1),
-                        Some(4),
-                        Some(192000),
-                    );
-                } else {
-                    eprintln!("Mode can be 'umc', 'i2s' or 'rawi2s'");
+                // let clock_file = std::fs::read_dir(&args.clock_dir)
+                //     .unwrap()
+                //     .next()
+                //     .unwrap()
+                //     .unwrap()
+                //     .path()
+                //     .to_str()
+                //     .unwrap()
+                //     .to_owned();
+                let clock_files = std::fs::read_dir(&args.clock_dir).unwrap();
+                for clock_file in clock_files {
+                    let clock_file = clock_file.unwrap().path().to_str().unwrap().to_owned();
+                    if mode == "umc" {
+                        umc::make_wav(
+                            &output,
+                            &args.input_dir,
+                            &clock_file,
+                            run.start,
+                            run.samples,
+                            None,
+                            None,
+                            None,
+                        );
+                    } else if mode == "i2s" {
+                        i2s::make_wav(
+                            &output,
+                            &args.input_dir,
+                            &clock_file,
+                            run.start,
+                            run.samples,
+                        );
+                    } else if mode == "rawi2s" {
+                        umc::make_wav(
+                            &output,
+                            &args.input_dir,
+                            &clock_file,
+                            run.start,
+                            run.samples,
+                            Some(1),
+                            Some(4),
+                            Some(192000),
+                        );
+                    } else {
+                        eprintln!("Mode can be 'umc', 'i2s' or 'rawi2s'");
+                    }
                 }
             }
         }
