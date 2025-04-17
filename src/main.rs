@@ -7,6 +7,7 @@ use self::concat::concat;
 mod concat;
 mod i2s;
 //mod pps;
+// mod concat_flights;
 mod cut_one;
 mod umc;
 
@@ -26,7 +27,16 @@ enum Commands {
     Cut(Args),
     /// Cut one file
     CutOne(CutOneArgs),
+    // ConcatCutsFlights(FlightsArgs),
 }
+
+// #[derive(clap::Args)]
+// struct FlightsArgs {
+//     #[arg(short, long)]
+//     input_dir: String,
+//     #[arg(short, long)]
+//     output_dir: String,
+// }
 
 #[derive(clap::Args)]
 struct CutOneArgs {
@@ -243,6 +253,6 @@ fn main() {
         }
         Commands::CutOne(args) => {
             cut_one::make_wav(args.output, args.input, args.start, args.samples);
-        }
+        } // Commands::ConcatCutsFlights(_args) => {}
     }
 }
