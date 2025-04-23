@@ -146,7 +146,8 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
 
     let records = reader
         .deserialize()
-        .map(|r| r.unwrap())
+        // .map(|r| r.unwrap())
+        .flatten()
         .collect::<Vec<Record>>();
 
     if records.is_empty() {
@@ -195,7 +196,6 @@ pub fn make_wav<P: std::convert::AsRef<Path>>(
         let samples = records[n_records - 1].sample;
         [samples; 2]
     };
-
 
     let pb = ProgressBar::new(samples[0] * 2);
     let t = (2.0 * samples[0] as f64).log10().ceil() as u64;
